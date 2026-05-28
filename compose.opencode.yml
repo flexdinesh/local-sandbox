@@ -1,0 +1,15 @@
+services:
+  opencode:
+    image: harness-sandbox-opencode
+    container_name: opencode-box
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - ${HOME}/Library/pnpm/store:/host-pnpm-store
+      - ${HOME}/workspace:/root/workspace:ro
+      - ${HOME}/workspace:/Users/dineshpandiyan/workspace:ro
+      - ${HOME}/.config/opencode:/root/.config/opencode
+      - ${HOME}/.local/share/opencode:/root/.local/share/opencode
+      - ${HOME}/.local/state/opencode:/root/.local/state/opencode

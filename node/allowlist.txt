@@ -6,3 +6,10 @@
 ^github\.com(:[0-9]+)?$
 ^raw\.githubusercontent\.com(:[0-9]+)?$
 ^codeload\.github\.com(:[0-9]+)?$
+
+# OpenCode servers
+^opencode\.ai(:[0-9]+)?$
+^models\.dev(:[0-9]+)?$
+
+# Providers
+^api\.githubcopilot\.com(:[0-9]+)?$

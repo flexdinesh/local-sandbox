@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Prepare tinyproxy log file before supervisord starts it
+install -d -o tinyproxy -g tinyproxy /var/log/tinyproxy
+touch /var/log/tinyproxy/tinyproxy.log
+chown tinyproxy:tinyproxy /var/log/tinyproxy/tinyproxy.log
+
 # Start tinyproxy under supervisord in the background
 supervisord -c /etc/supervisor/conf.d/tinyproxy.conf
 
