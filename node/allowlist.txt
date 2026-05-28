@@ -1,0 +1,8 @@
+# NPM Registry
+^registry\.npmjs\.org(:[0-9]+)?$
+^registry\.yarnpkg\.com(:[0-9]+)?$
+
+# GitHub (for pulling dependencies/code)
+^github\.com(:[0-9]+)?$
+^raw\.githubusercontent\.com(:[0-9]+)?$
+^codeload\.github\.com(:[0-9]+)?$
