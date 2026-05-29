@@ -1,6 +1,6 @@
 services:
   opencode:
-    image: local-sandbox-opencode
+    image: sandbox-opencode
     container_name: opencode-box
     working_dir: /workspace
     stdin_open: true

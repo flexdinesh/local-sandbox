@@ -4,9 +4,9 @@ This project contains Docker sandbox images for development workflows.
 
 ## Directory Structure
 
-- `node/`: Base Node 24 sandbox image with `tinyproxy` allowlisting managed by `supervisord`.
-- `opencode/`: OpenCode sandbox image extending the Node image. Starts `opencode` by default.
-- `pi/`: PI sandbox image extending the Node image. Starts `pi` by default.
+- `base/`: Base Debian sandbox image with `tinyproxy` allowlisting managed by `supervisord`.
+- `opencode/`: OpenCode sandbox image extending the base image with a Node runtime. Starts `opencode` by default.
+- `pi/`: PI sandbox image extending the base image with a Node runtime. Starts `pi` by default.
 
 ## Build
 
@@ -19,7 +19,7 @@ Build all images:
 Or build each image with its own build script:
 
 ```bash
-./node/build.sh
+./base/build.sh
 ./opencode/build.sh
 ./pi/build.sh
 ```
@@ -28,9 +28,9 @@ Build scripts can be run from any working directory.
 
 Images:
 
-- `local-sandbox-node`
-- `local-sandbox-opencode`
-- `local-sandbox-pi`
+- `sandbox-base`
+- `sandbox-opencode`
+- `sandbox-pi`
 
 ## Run
 
@@ -45,24 +45,24 @@ docker compose -f compose.opencode.yml run --rm opencode
 The Compose file also mounts `$HOME/workspace` into the container at `/root/workspace` and `/Users/dineshpandiyan/workspace`. These mounts keep symlinked OpenCode config files usable inside the container.
 
 ```bash
-docker run -it --rm -v "$PWD:/workspace" local-sandbox-node
+docker run -it --rm -v "$PWD:/workspace" sandbox-base
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
   -v "$HOME/.config/opencode:/root/.config/opencode" \
   -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  local-sandbox-opencode
+  sandbox-opencode
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  local-sandbox-pi
+  sandbox-pi
 ```
 
 The CLI images use pnpm v11, so hosts on pnpm v10 will use a sibling `v11` store under the same mounted parent.
 The OpenCode image also mounts the host config and state directories into `/root` because the container runs as root.
 
-The images inherit `WORKDIR /workspace` from the base Node image. To mount a parent workspace that contains multiple projects, mount it to `/workspace` and set the startup directory with Docker's `-w`/`--workdir` flag:
+The images inherit `WORKDIR /workspace` from the base image. To mount a parent workspace that contains multiple projects, mount it to `/workspace` and set the startup directory with Docker's `-w`/`--workdir` flag:
 
 ```bash
 docker run -it --rm \
@@ -72,7 +72,7 @@ docker run -it --rm \
   -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
   -w /workspace/my-project \
-  local-sandbox-opencode
+  sandbox-opencode
 ```
 
 Put `-w` before the image name. If the workdir path does not exist, Docker may create it as root inside the mounted host directory.
@@ -80,22 +80,22 @@ Put `-w` before the image name. If the workdir path does not exist, Docker may c
 Pass arguments to override the default command:
 
 ```bash
-docker run -it --rm -v "$PWD:/workspace" local-sandbox-node node --version
+docker run -it --rm -v "$PWD:/workspace" sandbox-base cat /etc/debian_version
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
   -v "$HOME/.config/opencode:/root/.config/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  local-sandbox-opencode opencode --version
+  sandbox-opencode opencode --version
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  local-sandbox-pi pi --version
+  sandbox-pi pi --version
 ```
 
 ## Network Allowlist
 
-The Node image starts `tinyproxy` under `supervisord` and sets standard proxy environment variables:
+The base image starts `tinyproxy` under `supervisord` and sets standard proxy environment variables:
 
 - `http_proxy`
 - `https_proxy`
@@ -103,7 +103,7 @@ The Node image starts `tinyproxy` under `supervisord` and sets standard proxy en
 - `HTTPS_PROXY`
 - `no_proxy`
 
-To add more allowed URLs, edit `node/allowlist.txt`. Use regex formatting with optional ports supported:
+To add more allowed URLs, edit `base/allowlist.txt`. Use regex formatting with optional ports supported:
 
 ```text
 # Allow NPM Registry

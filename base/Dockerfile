@@ -1,10 +1,9 @@
-FROM node:24-bullseye-slim
+FROM debian:bookworm-slim
 
-# Install Tinyproxy, supervisord, iptables, and basic dev utilities
+# Install Tinyproxy, supervisord, and basic dev utilities
 RUN apt-get update && apt-get install -y \
     tinyproxy \
     supervisor \
-    iptables \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
