@@ -1,6 +1,6 @@
 services:
   opencode:
-    image: harness-sandbox-opencode
+    image: local-sandbox-opencode
     container_name: opencode-box
     working_dir: /workspace
     stdin_open: true

@@ -8,9 +8,9 @@ This project builds local Docker sandbox images for agent/dev workflows. The goa
 
 Image hierarchy:
 
-* `harness-sandbox-node`: base image from `node/Dockerfile`.
-* `harness-sandbox-opencode`: extends `harness-sandbox-node` from `opencode/Dockerfile`.
-* `harness-sandbox-pi`: extends `harness-sandbox-node` from `pi/Dockerfile`.
+* `local-sandbox-node`: base image from `node/Dockerfile`.
+* `local-sandbox-opencode`: extends `local-sandbox-node` from `opencode/Dockerfile`.
+* `local-sandbox-pi`: extends `local-sandbox-node` from `pi/Dockerfile`.
 
 Directories:
 
@@ -67,7 +67,7 @@ Build individual images:
 ./pi/build.sh
 ```
 
-The root `build.sh` builds `node` first, then `opencode`, then `pi`. Child image Dockerfiles use `FROM harness-sandbox-node`, so child build scripts also build `node` first. Docker cache makes the repeated base build cheap when inputs did not change.
+The root `build.sh` builds `node` first, then `opencode`, then `pi`. Child image Dockerfiles use `FROM local-sandbox-node`, so child build scripts also build `node` first. Docker cache makes the repeated base build cheap when inputs did not change.
 
 Build scripts must resolve paths relative to their script location so they work from any current directory.
 
@@ -100,10 +100,10 @@ After Dockerfile or build script changes, run:
 
 ```bash
 ./build.sh
-docker run --rm harness-sandbox-node node --version
-docker run --rm harness-sandbox-opencode opencode --version
-docker run --rm harness-sandbox-pi pi --version
-docker run --rm harness-sandbox-node sh -c "sleep 3; supervisorctl -c /etc/supervisor/conf.d/tinyproxy.conf status tinyproxy"
+docker run --rm local-sandbox-node node --version
+docker run --rm local-sandbox-opencode opencode --version
+docker run --rm local-sandbox-pi pi --version
+docker run --rm local-sandbox-node sh -c "sleep 3; supervisorctl -c /etc/supervisor/conf.d/tinyproxy.conf status tinyproxy"
 ```
 
 Expected current versions at time of writing:
@@ -115,7 +115,7 @@ Expected current versions at time of writing:
 
 ## Nuances
 
-Dockerfiles cannot `FROM` another Dockerfile path. Child images extend the local image tag `harness-sandbox-node`.
+Dockerfiles cannot `FROM` another Dockerfile path. Child images extend the local image tag `local-sandbox-node`.
 
 Use root `build.sh` for full builds so image order is correct. Child builds are also safe to run directly because they build `node` first.
 

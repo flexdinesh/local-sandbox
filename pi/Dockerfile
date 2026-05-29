@@ -1,4 +1,4 @@
-FROM harness-sandbox-node
+FROM local-sandbox-node
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME/bin:$PATH"

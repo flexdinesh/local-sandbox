@@ -1,4 +1,4 @@
-# Harness Sandbox Images
+# Local Sandbox Images
 
 This project contains Docker sandbox images for development workflows.
 
@@ -28,9 +28,9 @@ Build scripts can be run from any working directory.
 
 Images:
 
-- `harness-sandbox-node`
-- `harness-sandbox-opencode`
-- `harness-sandbox-pi`
+- `local-sandbox-node`
+- `local-sandbox-opencode`
+- `local-sandbox-pi`
 
 ## Run
 
@@ -45,18 +45,18 @@ docker compose -f compose.opencode.yml run --rm opencode
 The Compose file also mounts `$HOME/workspace` into the container at `/root/workspace` and `/Users/dineshpandiyan/workspace`. These mounts keep symlinked OpenCode config files usable inside the container.
 
 ```bash
-docker run -it --rm -v "$PWD:/workspace" harness-sandbox-node
+docker run -it --rm -v "$PWD:/workspace" local-sandbox-node
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
   -v "$HOME/.config/opencode:/root/.config/opencode" \
   -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  harness-sandbox-opencode
+  local-sandbox-opencode
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  harness-sandbox-pi
+  local-sandbox-pi
 ```
 
 The CLI images use pnpm v11, so hosts on pnpm v10 will use a sibling `v11` store under the same mounted parent.
@@ -72,7 +72,7 @@ docker run -it --rm \
   -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
   -w /workspace/my-project \
-  harness-sandbox-opencode
+  local-sandbox-opencode
 ```
 
 Put `-w` before the image name. If the workdir path does not exist, Docker may create it as root inside the mounted host directory.
@@ -80,17 +80,17 @@ Put `-w` before the image name. If the workdir path does not exist, Docker may c
 Pass arguments to override the default command:
 
 ```bash
-docker run -it --rm -v "$PWD:/workspace" harness-sandbox-node node --version
+docker run -it --rm -v "$PWD:/workspace" local-sandbox-node node --version
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
   -v "$HOME/.config/opencode:/root/.config/opencode" \
   -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  harness-sandbox-opencode opencode --version
+  local-sandbox-opencode opencode --version
 docker run -it --rm \
   -v "$PWD:/workspace" \
   -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  harness-sandbox-pi pi --version
+  local-sandbox-pi pi --version
 ```
 
 ## Network Allowlist
