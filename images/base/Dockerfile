@@ -1,4 +1,5 @@
-FROM debian:bookworm-slim
+ARG DEBIAN_IMAGE=debian:bookworm-slim
+FROM ${DEBIAN_IMAGE}
 
 # Install Tinyproxy, supervisord, and basic dev utilities
 RUN apt-get update && apt-get install -y \
