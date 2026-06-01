@@ -37,7 +37,7 @@ If you switch the base libc (e.g. back to Alpine/musl), the `pnpm-store-*` build
 
 The base image uses `ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]`.
 
-`scripts/entrypoint.sh`:
+`images/base/entrypoint.sh`:
 
 * starts `supervisord` in the background
 * `supervisord` manages `tinyproxy`
@@ -80,7 +80,7 @@ Tinyproxy filtering uses host/domain matching, not URL matching:
 
 The baked allowlist can be overridden at runtime by bind-mounting a file over `/etc/tinyproxy/allowlist.txt`.
 
-The run wrappers accept `--network-access=full` or `NETWORK_ACCESS=full`. Full mode sets `TINYPROXY_FILTER_DEFAULT_DENY=No`; `scripts/entrypoint.sh` also comments out the `Filter` line before starting `supervisord` so the allowlist file does not become a deny list. The default `restricted`/`default-deny` mode keeps `FilterDefaultDeny Yes`.
+The run wrappers accept `--network-access=full` or `NETWORK_ACCESS=full`. Full mode sets `TINYPROXY_FILTER_DEFAULT_DENY=No`; `images/base/entrypoint.sh` also comments out the `Filter` line before starting `supervisord` so the allowlist file does not become a deny list. The default `restricted`/`default-deny` mode keeps `FilterDefaultDeny Yes`.
 
 The container sets:
 
