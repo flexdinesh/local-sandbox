@@ -41,7 +41,20 @@ The base image uses `ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]`.
 * starts `supervisord` in the background
 * `supervisord` manages `tinyproxy`
 * exports standard proxy env vars
+* `cd`s into `${WORKDIR:-/workdir}` so the working directory is runtime-configurable
 * `exec "$@"` to run the container command as the foreground process
+
+The base image `WORKDIR` is `/workdir` (not `/workspace`). `/workspace` is intentionally left free for ad-hoc read-only host mounts. Docker's `WORKDIR` instruction is build-time only, so the entrypoint `cd` into `$WORKDIR` is what makes the working directory changeable at runtime.
+
+### Runtime workdir and mounts
+
+* `WORKDIR` env var (default `/workdir`): directory the entrypoint `cd`s into. `opencode/Dockerfile` and `pi/Dockerfile` set the default via `ENV WORKDIR=/workdir`.
+* `run-opencode.sh` vars:
+  * `HOST_DIR` (default `$PWD`): host path mounted as the workdir.
+  * `CONTAINER_WORKDIR` (default `/workdir`): container mount target, `-w` working dir, and `WORKDIR` env. Run from any dir with `HOST_DIR=$PWD ./run-opencode.sh`.
+* `run-opencode.sh` does not mount whole OpenCode config/share/state directories. It mounts only `~/.config/opencode/opencode.jsonc`, `~/.config/opencode/tui.json`, `~/.config/opencode/plugins`, `~/.config/opencode/prompts`, and `~/.local/share/opencode/auth.json` read-only, resolving symlinks first. Missing paths fail fast.
+* `run-pi.sh` does not mount the whole PI directory. It mounts only `~/.pi/agent/extensions`, `~/.pi/agent/auth.json`, `~/.pi/agent/keybindings.json`, and `~/.pi/agent/settings.json` read-only, resolving symlinks first. Missing paths fail fast.
+* The run wrappers do not hardcode extra read-only mounts. Pass them through per invocation with `-v src:dst:ro` (forwarded to `docker run`).
 
 Default commands:
 
@@ -63,7 +76,7 @@ The container sets:
 * `HTTPS_PROXY=http://127.0.0.1:8888`
 * `no_proxy=localhost,127.0.0.1`
 
-There is no strict firewall mode. Do not reintroduce `--cap-add=NET_ADMIN`, cap table args, or `run.sh` unless explicitly requested.
+There is no strict firewall mode. Do not reintroduce `--cap-add=NET_ADMIN`, cap table args, or a single shared `run.sh` unless explicitly requested.
 
 ## Build Model
 

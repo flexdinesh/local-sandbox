@@ -16,4 +16,7 @@ export HTTP_PROXY="http://127.0.0.1:8888"
 export HTTPS_PROXY="http://127.0.0.1:8888"
 export no_proxy="localhost,127.0.0.1"
 
+# Switch to the runtime-configurable working directory before exec
+cd "${WORKDIR:-/workdir}"
+
 exec "$@"

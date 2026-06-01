@@ -1,113 +1,62 @@
 # Local Sandbox Images
 
-This project contains Docker sandbox images for development workflows.
+Docker sandbox images for development workflows.
 
-## Directory Structure
+## Images
 
-- `base/`: Base Debian sandbox image with `tinyproxy` allowlisting managed by `supervisord`.
-- `opencode/`: OpenCode sandbox image extending the base image with a Node runtime. Starts `opencode` by default.
-- `pi/`: PI sandbox image extending the base image with a Node runtime. Starts `pi` by default.
+- `sandbox-base`: Debian base with `tinyproxy` allowlisting under `supervisord`.
+- `sandbox-opencode`: base + Node runtime, starts `opencode`.
+- `sandbox-pi`: base + Node runtime, starts `pi`.
 
 ## Build
 
-Build all images:
-
 ```bash
-./build.sh
-```
-
-Or build each image with its own build script:
-
-```bash
-./base/build.sh
+./build.sh                # all images
+./base/build.sh           # or build individually
 ./opencode/build.sh
 ./pi/build.sh
 ```
 
-Build scripts can be run from any working directory.
-
-Images:
-
-- `sandbox-base`
-- `sandbox-opencode`
-- `sandbox-pi`
+Scripts run from any directory.
 
 ## Run
 
-Run images directly with `docker run`. The `opencode` and `pi` images start their CLIs by default.
-
-Run the OpenCode image with Docker Compose to reuse the required workspace, pnpm store, config, and state mounts:
+Easiest path for the CLI images:
 
 ```bash
-docker compose -f compose.opencode.yml run --rm opencode
+./run-opencode.sh
+./run-pi.sh
 ```
 
-The Compose file also mounts `$HOME/workspace` into the container at `/root/workspace` and `/Users/dineshpandiyan/workspace`. These mounts keep symlinked OpenCode config files usable inside the container.
+These wrappers wire up the workdir and pnpm store. `run-opencode.sh` and `run-pi.sh` mount only selected config/auth paths read-only, resolve symlinks first, and fail fast when any required path is missing. OpenCode config/share/state dirs and the PI agent dir are not mounted wholesale, so code state stays container-local.
+
+Mounts `$PWD` at `/workdir` by default. Override:
+
+- `HOST_DIR`: host path to mount (default `$PWD`).
+- `CONTAINER_WORKDIR`: container mount target and start dir (default `/workdir`).
+
+Extra args pass through to `docker run`, e.g. read-only mounts:
 
 ```bash
-docker run -it --rm -v "$PWD:/workspace" sandbox-base
-docker run -it --rm \
-  -v "$PWD:/workspace" \
-  -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  -v "$HOME/.config/opencode:/root/.config/opencode" \
-  -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
-  -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  sandbox-opencode
-docker run -it --rm \
-  -v "$PWD:/workspace" \
-  -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  sandbox-pi
+./run-opencode.sh -v "$HOME/workspace:/workspace:ro"
+HOST_DIR="$HOME/projects/app" ./run-pi.sh
 ```
 
-The CLI images use pnpm v11, so hosts on pnpm v10 will use a sibling `v11` store under the same mounted parent.
-The OpenCode image also mounts the host config and state directories into `/root` because the container runs as root.
-
-The images inherit `WORKDIR /workspace` from the base image. To mount a parent workspace that contains multiple projects, mount it to `/workspace` and set the startup directory with Docker's `-w`/`--workdir` flag:
+Or run images directly:
 
 ```bash
-docker run -it --rm \
-  -v "$HOME/workspace:/workspace" \
-  -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  -v "$HOME/.config/opencode:/root/.config/opencode" \
-  -v "$HOME/.local/share/opencode:/root/.local/share/opencode" \
-  -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  -w /workspace/my-project \
-  sandbox-opencode
+docker run -it --rm -v "$PWD:/workdir" sandbox-base
+docker run -it --rm -v "$PWD:/workdir" sandbox-pi
 ```
 
-Put `-w` before the image name. If the workdir path does not exist, Docker may create it as root inside the mounted host directory.
-
-Pass arguments to override the default command:
-
-```bash
-docker run -it --rm -v "$PWD:/workspace" sandbox-base cat /etc/debian_version
-docker run -it --rm \
-  -v "$PWD:/workspace" \
-  -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  -v "$HOME/.config/opencode:/root/.config/opencode" \
-  -v "$HOME/.local/state/opencode:/root/.local/state/opencode" \
-  sandbox-opencode opencode --version
-docker run -it --rm \
-  -v "$PWD:/workspace" \
-  -v "$(dirname "$(pnpm store path)"):/host-pnpm-store" \
-  sandbox-pi pi --version
-```
+Pass args to override the default command (e.g. `... sandbox-pi pi --version`).
 
 ## Network Allowlist
 
-The base image starts `tinyproxy` under `supervisord` and sets standard proxy environment variables:
+The base image runs `tinyproxy` under `supervisord` and sets `http_proxy`/`https_proxy` (+ uppercase) and `no_proxy`.
 
-- `http_proxy`
-- `https_proxy`
-- `HTTP_PROXY`
-- `HTTPS_PROXY`
-- `no_proxy`
-
-To add more allowed URLs, edit `base/allowlist.txt`. Use regex formatting with optional ports supported:
+Add allowed hosts to `base/allowlist.txt` (regex, optional port), then rebuild:
 
 ```text
-# Allow NPM Registry
 ^registry\.npmjs\.org(:[0-9]+)?$
 ```
-
-Rebuild images after updating the allowlist.

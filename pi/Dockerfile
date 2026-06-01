@@ -4,6 +4,7 @@ FROM sandbox-base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME/bin:$PATH"
+ENV WORKDIR=/workdir
 
 # Bring the Node runtime from the node stage into the Debian base
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
