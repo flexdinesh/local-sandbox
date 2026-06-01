@@ -8,13 +8,13 @@ This project builds local Docker sandbox images for agent/dev workflows. The goa
 
 Image hierarchy:
 
-* `sandbox-base`: base Debian image from `images/base/Dockerfile`. No Node runtime.
+* `sandbox-base`: base Debian image from `images/base/Dockerfile`. Includes Nix and basic dev utilities, but no Node runtime.
 * `sandbox-opencode`: extends `sandbox-base` from `images/opencode/Dockerfile`. Adds Node via a `node:24-bookworm-slim` multistage stage.
 * `sandbox-pi`: extends `sandbox-base` from `images/pi/Dockerfile`. Adds Node via a `node:24-bookworm-slim` multistage stage.
 
 Directories:
 
-* `images/base/`: base Debian image, tinyproxy config, allowlist, supervisor config.
+* `images/base/`: base Debian image, Nix, basic dev utilities, tinyproxy config, allowlist, supervisor config.
 * `images/opencode/`: copies Node runtime from a node stage, installs and starts OpenCode CLI.
 * `images/pi/`: copies Node runtime from a node stage, installs and starts PI coding agent CLI.
 * `scripts/`: build scripts, run wrappers, and image entrypoint scripts.
@@ -54,9 +54,10 @@ The base image `WORKDIR` is `/workdir` (not `/workspace`). `/workspace` is inten
   * `HOST_DIR` (default `$PWD`): host path mounted as the workdir.
   * `CONTAINER_WORKDIR` (default `/workdir`): container mount target, `-w` working dir, and `WORKDIR` env. Run from any dir with `HOST_DIR=$PWD ./scripts/run-opencode.sh`.
   * `NETWORK_ACCESS` (default `restricted`): `restricted`/`default-deny` keeps Tinyproxy allowlist filtering enabled; `full` disables default-deny filtering.
+  * `NIX_STORE_VOLUME` (default `sandbox-nix`): Docker named volume mounted at `/nix` so Nix downloads and build outputs survive container runs.
 * `scripts/run-opencode.sh` does not mount whole host OpenCode config/share/state directories. It uses Docker named volumes `opencode-config` for `/root/.config/opencode`, `opencode-shared` for `/root/.local/share/opencode`, and `opencode-state` for `/root/.local/state/opencode`, then overlays only `~/.config/opencode/opencode.jsonc`, `~/.config/opencode/tui.json`, `~/.config/opencode/plugins`, `~/.config/opencode/prompts`, and `~/.local/share/opencode/auth.json` read-only, resolving symlinks first. Missing paths fail fast.
 * `scripts/run-pi.sh` does not mount the whole host PI directory. It uses the shared Docker named volume `shared-pi` for `/root/.pi`, then overlays only `~/.pi/agent/extensions`, `~/.pi/agent/auth.json`, `~/.pi/agent/keybindings.json`, and `~/.pi/agent/settings.json` read-only, resolving symlinks first. Missing paths fail fast.
-* `scripts/run-pi.sh` uses the same `HOST_DIR`, `CONTAINER_WORKDIR`, and `NETWORK_ACCESS` runtime controls as `scripts/run-opencode.sh`.
+* `scripts/run-pi.sh` uses the same `HOST_DIR`, `CONTAINER_WORKDIR`, `NETWORK_ACCESS`, and `NIX_STORE_VOLUME` runtime controls as `scripts/run-opencode.sh`.
 * The run wrappers do not hardcode container names or extra read-only mounts. Pass leading Docker args through per invocation with `-v src:dst:ro`. Use `--network-access=full` to disable Tinyproxy default-deny filtering for that run. Non-option args run as the container command; use `--` to separate Docker args from the runtime command when needed, e.g. `./scripts/run-opencode.sh -- opencode debug` or `./scripts/run-opencode.sh -- opencode --log-level DEBUG`.
 
 Default commands:

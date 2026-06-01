@@ -4,7 +4,7 @@ Docker images for running agent CLIs with constrained filesystem mounts and prox
 
 ## Model
 
-- `sandbox-base`: Debian + Tinyproxy under `supervisord`.
+- `sandbox-base`: Debian + Tinyproxy under `supervisord` + Nix + basic dev utilities.
 - `sandbox-opencode`: `sandbox-base` + pinned Node runtime + OpenCode.
 - `sandbox-pi`: `sandbox-base` + pinned Node runtime + PI.
 
@@ -16,10 +16,13 @@ Filesystem policy lives in the run wrappers:
 - tool state kept in Docker named volumes
 - selected host config/auth paths mounted read-only
 - host pnpm store mounted writable at `/host-pnpm-store`
+- Nix store mounted writable at `/nix` using a Docker named volume
 
 Network policy is proxy allowlisting. In `restricted` mode, proxy env vars point to Tinyproxy on `127.0.0.1:8888`; in `full` mode, Tinyproxy filtering is disabled. This is not packet-level egress enforcement.
 
 Pinned versions live in `versions.env`.
+
+Nix is installed in the base image from Debian's `nix-bin` package. The base image enables `nix-command` and `flakes` globally so project-level `flake.nix` dev shells can be used from the CLI images. The run wrappers mount Docker named volume `sandbox-nix` at `/nix` by default so Nix downloads and build outputs survive container runs. Override the volume name with `NIX_STORE_VOLUME`.
 
 ## Build
 

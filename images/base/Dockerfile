@@ -1,13 +1,18 @@
 ARG DEBIAN_IMAGE=debian:bookworm-slim
 FROM ${DEBIAN_IMAGE}
 
-# Install Tinyproxy, supervisord, and basic dev utilities
+# Install Tinyproxy, supervisord, Nix, and basic dev utilities
 RUN apt-get update && apt-get install -y \
     tinyproxy \
     supervisor \
     curl \
     git \
+    nix-bin \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/nix \
+    && printf 'experimental-features = nix-command flakes\n' > /etc/nix/nix.conf
 
 WORKDIR /workdir
 

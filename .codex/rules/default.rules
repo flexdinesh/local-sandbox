@@ -1,0 +1,7 @@
+# docker
+prefix_rule(pattern=["docker", "run"], decision="allow")
+prefix_rule(pattern=["docker", "volume", "rm"], decision="allow")
+
+# scripts
+prefix_rule(pattern=["./scripts/build.sh"], decision="allow")
+
