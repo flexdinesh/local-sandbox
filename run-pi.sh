@@ -5,7 +5,9 @@ set -euo pipefail
 # Env vars:
 #   HOST_DIR          host path mounted as the workdir (default: $PWD)
 #   CONTAINER_WORKDIR container mount target + start dir + WORKDIR (default: /workdir)
+#   NETWORK_ACCESS    restricted/default-deny or full (default: restricted)
 # Leading Docker args are passed through to `docker run` (e.g. -v src:dst:ro).
+# Use `--network-access=full` to disable Tinyproxy default-deny filtering.
 # Use `--` before a container command that starts with `-`.
 
 TOOL="pi"
@@ -54,6 +56,7 @@ add_required_mount() {
 
 docker_extra_args=()
 command_args=()
+network_access="${NETWORK_ACCESS:-restricted}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -61,6 +64,19 @@ while [ "$#" -gt 0 ]; do
       shift
       command_args=("$@")
       break
+      ;;
+    --network-access)
+      shift
+      if [ "$#" -eq 0 ]; then
+        printf 'missing value for --network-access\n' >&2
+        exit 1
+      fi
+      network_access="$1"
+      shift
+      ;;
+    --network-access=*)
+      network_access="${1#*=}"
+      shift
       ;;
     -v|--volume|-e|--env|-w|--workdir|--name|--hostname|--entrypoint|-u|--user|-p|--publish|--add-host|--network|--mount|--tmpfs|--env-file|--label|--platform|--pull)
       docker_extra_args+=("$1")
@@ -87,11 +103,26 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+case "$network_access" in
+  restricted|default-deny)
+    tinyproxy_filter_default_deny="Yes"
+    ;;
+  full)
+    tinyproxy_filter_default_deny="No"
+    ;;
+  *)
+    printf 'unsupported --network-access value: %s\n' "$network_access" >&2
+    printf 'supported values: restricted, default-deny, full\n' >&2
+    exit 1
+    ;;
+esac
+
 docker_args=(-i --rm)
 [ -t 0 ] && [ -t 1 ] && docker_args=(-it --rm)
 
 docker_args+=(
   -e "WORKDIR=$CONTAINER_WORKDIR"
+  -e "TINYPROXY_FILTER_DEFAULT_DENY=$tinyproxy_filter_default_deny"
   -w "$CONTAINER_WORKDIR"
   -v "$HOST_DIR:$CONTAINER_WORKDIR"
   -v "$HOME/Library/pnpm/store:/host-pnpm-store"

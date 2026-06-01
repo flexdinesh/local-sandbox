@@ -34,6 +34,7 @@ Mounts `$PWD` at `/workdir` by default. Override:
 
 - `HOST_DIR`: host path to mount (default `$PWD`).
 - `CONTAINER_WORKDIR`: container mount target and start dir (default `/workdir`).
+- `NETWORK_ACCESS`: `restricted`/`default-deny` or `full` (default `restricted`).
 
 Leading args pass through to `docker run`, e.g. read-only mounts. Non-option args run as the container command; use `--` if the command starts with `-`.
 
@@ -64,8 +65,28 @@ Pass args to override the default command (e.g. `... sandbox-pi pi --version`).
 
 The base image runs `tinyproxy` under `supervisord` and sets `http_proxy`/`https_proxy` (+ uppercase) and `no_proxy`.
 
-Add allowed hosts to `base/allowlist.txt` (regex, optional port), then rebuild:
+Add allowed hosts to `base/allowlist.txt` using Tinyproxy `fnmatch` host patterns, then rebuild:
 
 ```text
-^registry\.npmjs\.org(:[0-9]+)?$
+registry.npmjs.org
+*.example.com
 ```
+
+Or override the baked default allowlist at runtime by mounting a file over the same path:
+
+```bash
+docker run -it --rm \
+  -v "$PWD/allowlist.txt:/etc/tinyproxy/allowlist.txt:ro" \
+  -v "$PWD:/workdir" \
+  sandbox-base
+```
+
+Use full network access for the CLI wrappers by disabling Tinyproxy's default deny mode at runtime:
+
+```bash
+./run-opencode.sh --network-access=full
+./run-pi.sh --network-access=full
+NETWORK_ACCESS=full ./run-opencode.sh
+```
+
+In full mode, the wrapper sets `TINYPROXY_FILTER_DEFAULT_DENY=No`; the entrypoint also disables the `Filter` line so the default allowlist does not become a deny list.

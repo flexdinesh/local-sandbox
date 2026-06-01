@@ -52,9 +52,11 @@ The base image `WORKDIR` is `/workdir` (not `/workspace`). `/workspace` is inten
 * `run-opencode.sh` vars:
   * `HOST_DIR` (default `$PWD`): host path mounted as the workdir.
   * `CONTAINER_WORKDIR` (default `/workdir`): container mount target, `-w` working dir, and `WORKDIR` env. Run from any dir with `HOST_DIR=$PWD ./run-opencode.sh`.
+  * `NETWORK_ACCESS` (default `restricted`): `restricted`/`default-deny` keeps Tinyproxy allowlist filtering enabled; `full` disables default-deny filtering.
 * `run-opencode.sh` does not mount whole host OpenCode config/share/state directories. It uses Docker named volumes `opencode-config` for `/root/.config/opencode`, `opencode-shared` for `/root/.local/share/opencode`, and `opencode-state` for `/root/.local/state/opencode`, then overlays only `~/.config/opencode/opencode.jsonc`, `~/.config/opencode/tui.json`, `~/.config/opencode/plugins`, `~/.config/opencode/prompts`, and `~/.local/share/opencode/auth.json` read-only, resolving symlinks first. Missing paths fail fast.
 * `run-pi.sh` does not mount the whole host PI directory. It uses the shared Docker named volume `shared-pi` for `/root/.pi`, then overlays only `~/.pi/agent/extensions`, `~/.pi/agent/auth.json`, `~/.pi/agent/keybindings.json`, and `~/.pi/agent/settings.json` read-only, resolving symlinks first. Missing paths fail fast.
-* The run wrappers do not hardcode container names or extra read-only mounts. Pass leading Docker args through per invocation with `-v src:dst:ro`. Non-option args run as the container command; use `--` to separate Docker args from the runtime command when needed, e.g. `./run-opencode.sh -- opencode debug` or `./run-opencode.sh -- opencode --log-level DEBUG`.
+* `run-pi.sh` uses the same `HOST_DIR`, `CONTAINER_WORKDIR`, and `NETWORK_ACCESS` runtime controls as `run-opencode.sh`.
+* The run wrappers do not hardcode container names or extra read-only mounts. Pass leading Docker args through per invocation with `-v src:dst:ro`. Use `--network-access=full` to disable Tinyproxy default-deny filtering for that run. Non-option args run as the container command; use `--` to separate Docker args from the runtime command when needed, e.g. `./run-opencode.sh -- opencode debug` or `./run-opencode.sh -- opencode --log-level DEBUG`.
 
 Default commands:
 
@@ -66,7 +68,18 @@ The CLI should be the interactive foreground process. Do not run the CLI under s
 
 ## Network Model
 
-`tinyproxy` runs on `127.0.0.1:8888` with allowlist filtering from `base/allowlist.txt`.
+`tinyproxy` runs on `127.0.0.1:8888` with allowlist filtering from `base/allowlist.txt` by default.
+
+Tinyproxy filtering uses host/domain matching, not URL matching:
+
+* `Filter "/etc/tinyproxy/allowlist.txt"`
+* `FilterType fnmatch`
+* no `FilterURLs`
+* `FilterDefaultDeny Yes`
+
+The baked allowlist can be overridden at runtime by bind-mounting a file over `/etc/tinyproxy/allowlist.txt`.
+
+The run wrappers accept `--network-access=full` or `NETWORK_ACCESS=full`. Full mode sets `TINYPROXY_FILTER_DEFAULT_DENY=No`; `base/entrypoint.sh` also comments out the `Filter` line before starting `supervisord` so the allowlist file does not become a deny list. The default `restricted`/`default-deny` mode keeps `FilterDefaultDeny Yes`.
 
 The container sets:
 
@@ -138,8 +151,8 @@ Expected current versions at time of writing:
 
 * Debian: `12.14`
 * Node: `v24.16.0`
-* OpenCode: `1.15.11`
-* PI: `0.76.0`
+* OpenCode: `1.15.13`
+* PI: `0.78.0`
 * tinyproxy status: `RUNNING`
 
 ## Nuances

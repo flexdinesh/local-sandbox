@@ -6,6 +6,19 @@ install -d -o tinyproxy -g tinyproxy /var/log/tinyproxy
 touch /var/log/tinyproxy/tinyproxy.log
 chown tinyproxy:tinyproxy /var/log/tinyproxy/tinyproxy.log
 
+case "${TINYPROXY_FILTER_DEFAULT_DENY:-Yes}" in
+  Yes|No)
+    sed -i "s/^FilterDefaultDeny .*/FilterDefaultDeny ${TINYPROXY_FILTER_DEFAULT_DENY:-Yes}/" /etc/tinyproxy/tinyproxy.conf
+    if [ "${TINYPROXY_FILTER_DEFAULT_DENY:-Yes}" = "No" ]; then
+      sed -i 's|^Filter "|# Filter "|' /etc/tinyproxy/tinyproxy.conf
+    fi
+    ;;
+  *)
+    printf 'TINYPROXY_FILTER_DEFAULT_DENY must be Yes or No\n' >&2
+    exit 1
+    ;;
+esac
+
 # Start tinyproxy under supervisord in the background
 supervisord -c /etc/supervisor/conf.d/tinyproxy.conf
 
