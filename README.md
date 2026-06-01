@@ -10,9 +10,9 @@ Docker images for running agent CLIs with constrained filesystem mounts and prox
 
 Filesystem policy lives in the run wrappers:
 
-- project directory mounted writable at `/workdir`
 - root filesystem mounted read-only
-- runtime paths mounted as tmpfs
+- runtime tmpfs mounts: `/tmp:exec`, `/run`, `/var/log`, `/root/.cache`
+- project directory mounted writable at `/workdir`
 - tool state kept in Docker named volumes
 - selected host config/auth paths mounted read-only
 - host pnpm store mounted writable at `/host-pnpm-store`
