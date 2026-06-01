@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /workdir
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY tinyproxy.conf /etc/tinyproxy/tinyproxy.conf
-COPY supervisord.conf /etc/supervisor/conf.d/tinyproxy.conf
-COPY allowlist.txt /etc/tinyproxy/allowlist.txt
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY images/base/tinyproxy.conf /etc/tinyproxy/tinyproxy.conf
+COPY images/base/supervisord.conf /etc/supervisor/conf.d/tinyproxy.conf
+COPY images/base/allowlist.txt /etc/tinyproxy/allowlist.txt
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
