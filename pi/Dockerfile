@@ -18,6 +18,7 @@ RUN --mount=type=cache,id=pnpm-store-pi,target=/pnpm/store \
   && pnpm add -g --store-dir /pnpm/store --config.enable-global-virtual-store=false --package-import-method copy --ignore-scripts @earendil-works/pi-coding-agent \
   && printf '#!/bin/sh\nexec /pnpm/bin/pi "$@"\n' > /usr/local/bin/pi \
   && chmod +x /usr/local/bin/pi \
-  && pnpm config set store-dir /host-pnpm-store --global
+  && pnpm config set store-dir /host-pnpm-store --global \
+  && mkdir -p /root/.pi/agent
 
 CMD ["pi"]

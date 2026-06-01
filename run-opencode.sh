@@ -5,7 +5,8 @@ set -euo pipefail
 # Env vars:
 #   HOST_DIR          host path mounted as the workdir (default: $PWD)
 #   CONTAINER_WORKDIR container mount target + start dir + WORKDIR (default: /workdir)
-# Extra args are passed through to `docker run` (e.g. -v src:dst:ro).
+# Leading Docker args are passed through to `docker run` (e.g. -v src:dst:ro).
+# Use `--` before a container command that starts with `-`.
 
 TOOL="opencode"
 IMAGE="sandbox-opencode"
@@ -52,17 +53,52 @@ add_required_mount() {
   docker_args+=(-v "$(resolve_path "$source"):$target:ro")
 }
 
+docker_extra_args=()
+command_args=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --)
+      shift
+      command_args=("$@")
+      break
+      ;;
+    -v|--volume|-e|--env|-w|--workdir|--name|--hostname|--entrypoint|-u|--user|-p|--publish|--add-host|--network|--mount|--tmpfs|--env-file|--label|--platform|--pull)
+      docker_extra_args+=("$1")
+      shift
+      if [ "$#" -eq 0 ]; then
+        printf 'missing value for docker arg\n' >&2
+        exit 1
+      fi
+      docker_extra_args+=("$1")
+      shift
+      ;;
+    --volume=*|--env=*|--workdir=*|--name=*|--hostname=*|--entrypoint=*|--user=*|--publish=*|--add-host=*|--network=*|--mount=*|--tmpfs=*|--env-file=*|--label=*|--platform=*|--pull=*)
+      docker_extra_args+=("$1")
+      shift
+      ;;
+    -*)
+      docker_extra_args+=("$1")
+      shift
+      ;;
+    *)
+      command_args=("$@")
+      break
+      ;;
+  esac
+done
+
 docker_args=(-i --rm)
 [ -t 0 ] && [ -t 1 ] && docker_args=(-it --rm)
 
 docker_args+=(
-  --name "$TOOL-box"
   -e "WORKDIR=$CONTAINER_WORKDIR"
   -w "$CONTAINER_WORKDIR"
   -v "$HOST_DIR:$CONTAINER_WORKDIR"
   -v "$HOME/Library/pnpm/store:/host-pnpm-store"
-  --tmpfs "/root/.config/$TOOL"
-  --tmpfs "/root/.local/share/$TOOL"
+  -v "$TOOL-config:/root/.config/$TOOL"
+  -v "$TOOL-shared:/root/.local/share/$TOOL"
+  -v "$TOOL-state:/root/.local/state/$TOOL"
 )
 
 add_required_mount "$CFG/opencode.jsonc" "/root/.config/$TOOL/opencode.jsonc"
@@ -71,4 +107,4 @@ add_required_mount "$CFG/plugins" "/root/.config/$TOOL/plugins"
 add_required_mount "$CFG/prompts" "/root/.config/$TOOL/prompts"
 add_required_mount "$SHARE/auth.json" "/root/.local/share/$TOOL/auth.json"
 
-exec docker run "${docker_args[@]}" "$IMAGE" "$@"
+exec docker run "${docker_args[@]}" ${docker_extra_args[@]+"${docker_extra_args[@]}"} "$IMAGE" ${command_args[@]+"${command_args[@]}"}

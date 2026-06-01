@@ -13,3 +13,4 @@
 
 # Providers
 ^api\.githubcopilot\.com(:[0-9]+)?$
+^chatgpt\.com(:[0-9]+)?$

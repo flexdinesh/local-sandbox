@@ -52,9 +52,9 @@ The base image `WORKDIR` is `/workdir` (not `/workspace`). `/workspace` is inten
 * `run-opencode.sh` vars:
   * `HOST_DIR` (default `$PWD`): host path mounted as the workdir.
   * `CONTAINER_WORKDIR` (default `/workdir`): container mount target, `-w` working dir, and `WORKDIR` env. Run from any dir with `HOST_DIR=$PWD ./run-opencode.sh`.
-* `run-opencode.sh` does not mount whole OpenCode config/share/state directories. It mounts only `~/.config/opencode/opencode.jsonc`, `~/.config/opencode/tui.json`, `~/.config/opencode/plugins`, `~/.config/opencode/prompts`, and `~/.local/share/opencode/auth.json` read-only, resolving symlinks first. Missing paths fail fast.
-* `run-pi.sh` does not mount the whole PI directory. It mounts only `~/.pi/agent/extensions`, `~/.pi/agent/auth.json`, `~/.pi/agent/keybindings.json`, and `~/.pi/agent/settings.json` read-only, resolving symlinks first. Missing paths fail fast.
-* The run wrappers do not hardcode extra read-only mounts. Pass them through per invocation with `-v src:dst:ro` (forwarded to `docker run`).
+* `run-opencode.sh` does not mount whole host OpenCode config/share/state directories. It uses Docker named volumes `opencode-config` for `/root/.config/opencode`, `opencode-shared` for `/root/.local/share/opencode`, and `opencode-state` for `/root/.local/state/opencode`, then overlays only `~/.config/opencode/opencode.jsonc`, `~/.config/opencode/tui.json`, `~/.config/opencode/plugins`, `~/.config/opencode/prompts`, and `~/.local/share/opencode/auth.json` read-only, resolving symlinks first. Missing paths fail fast.
+* `run-pi.sh` does not mount the whole host PI directory. It uses the shared Docker named volume `shared-pi` for `/root/.pi`, then overlays only `~/.pi/agent/extensions`, `~/.pi/agent/auth.json`, `~/.pi/agent/keybindings.json`, and `~/.pi/agent/settings.json` read-only, resolving symlinks first. Missing paths fail fast.
+* The run wrappers do not hardcode container names or extra read-only mounts. Pass leading Docker args through per invocation with `-v src:dst:ro`. Non-option args run as the container command; use `--` to separate Docker args from the runtime command when needed, e.g. `./run-opencode.sh -- opencode debug` or `./run-opencode.sh -- opencode --log-level DEBUG`.
 
 Default commands:
 

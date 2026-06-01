@@ -18,6 +18,7 @@ RUN --mount=type=cache,id=pnpm-store-opencode,target=/pnpm/store \
   && pnpm i -g --store-dir /pnpm/store --config.enable-global-virtual-store=false --package-import-method copy --allow-build=opencode-ai opencode-ai \
   && printf '#!/bin/sh\nexec /pnpm/bin/opencode "$@"\n' > /usr/local/bin/opencode \
   && chmod +x /usr/local/bin/opencode \
-  && pnpm config set store-dir /host-pnpm-store --global
+  && pnpm config set store-dir /host-pnpm-store --global \
+  && mkdir -p /root/.config/opencode /root/.local/share/opencode /root/.local/state/opencode
 
 CMD ["opencode"]
