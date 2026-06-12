@@ -1,20 +1,17 @@
 ARG NODE_IMAGE=node:24.16.0-bookworm-slim
-FROM ${NODE_IMAGE} AS node
-
-FROM sandbox-base
+FROM ${NODE_IMAGE}
 
 ARG OPENCODE_VERSION=1.15.13
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME/bin:$PATH"
-ENV WORKDIR=/workdir
 
-# Bring the Node runtime from the node stage into the Debian base
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
-RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-  && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
-  && ln -s ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    ripgrep \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,id=pnpm-store-opencode,target=/pnpm/store \
   corepack enable \
@@ -24,4 +21,5 @@ RUN --mount=type=cache,id=pnpm-store-opencode,target=/pnpm/store \
   && pnpm config set store-dir /host-pnpm-store --global \
   && mkdir -p /root/.config/opencode /root/.local/share/opencode /root/.local/state/opencode
 
+WORKDIR /workdir
 CMD ["opencode"]
