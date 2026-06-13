@@ -13,7 +13,7 @@ func TestAllReturnsCanonicalHarnessesInDocumentedOrder(t *testing.T) {
 		got = append(got, h.Name)
 	}
 
-	want := []string{NameOpenCode, NamePI}
+	want := []string{NameOpenCode, NamePI, NameCodex}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("expected harness names %v, got %v", want, got)
 	}
@@ -27,6 +27,7 @@ func TestLookupReturnsExactDefinitions(t *testing.T) {
 	}{
 		{name: NameOpenCode, imageTag: "sandbox-opencode", dockerfile: "images/opencode/Dockerfile"},
 		{name: NamePI, imageTag: "sandbox-pi", dockerfile: "images/pi/Dockerfile"},
+		{name: NameCodex, imageTag: "sandbox-codex", dockerfile: "images/codex/Dockerfile"},
 	}
 
 	for _, tt := range tests {
@@ -67,6 +68,10 @@ func TestBuildArgv(t *testing.T) {
 		{
 			name: NamePI,
 			want: []string{"build", "-f", "images/pi/Dockerfile", "-t", "sandbox-pi", "."},
+		},
+		{
+			name: NameCodex,
+			want: []string{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
 		},
 	}
 
@@ -123,6 +128,18 @@ func TestRunArgv(t *testing.T) {
 				"-v", "/home/test/.pi/agent/settings.json:/root/.pi/agent/settings.json:ro",
 				"sandbox-pi",
 				"pi", "--version",
+			},
+		},
+		{
+			name:        NameCodex,
+			passThrough: []string{"codex", "--version"},
+			want: []string{
+				"run", "-it", "--rm",
+				"-v", "/repo:/workdir",
+				"-w", "/workdir",
+				"-v", "/home/test/.codex:/root/.codex",
+				"sandbox-codex",
+				"codex", "--version",
 			},
 		},
 	}

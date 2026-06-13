@@ -9,6 +9,7 @@ Build commands assume the current directory is this repository. Run commands ass
 ```bash
 docker build -f images/opencode/Dockerfile -t sandbox-opencode .
 docker build -f images/pi/Dockerfile -t sandbox-pi .
+docker build -f images/codex/Dockerfile -t sandbox-codex .
 ```
 
 ## Run OpenCode
@@ -71,4 +72,24 @@ docker run -it --rm \
   -v "$HOME/.pi/agent/keybindings.json:/root/.pi/agent/keybindings.json:ro" \
   -v "$HOME/.pi/agent/settings.json:/root/.pi/agent/settings.json:ro" \
   sandbox-pi pi --version
+```
+
+## Run Codex
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex
+```
+
+Pass a different Codex command by appending it after the image name:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex codex --version
 ```

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/flexdinesh/cbox/tools/cbox/internal/harness"
 	"github.com/spf13/cobra"
 )
 
@@ -59,8 +60,8 @@ func NewRootCommand(options ...Option) *cobra.Command {
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.AddCommand(newBuildCommand(cfg))
 	cmd.AddCommand(newRunCommand(cfg))
-	for _, h := range []string{"opencode", "pi"} {
-		cmd.AddCommand(newShorthandRunCommand(cfg, h))
+	for _, h := range harness.All() {
+		cmd.AddCommand(newShorthandRunCommand(cfg, h.Name))
 	}
 
 	return cmd

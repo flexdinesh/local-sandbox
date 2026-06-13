@@ -5,6 +5,7 @@ import "path/filepath"
 const (
 	NameOpenCode = "opencode"
 	NamePI       = "pi"
+	NameCodex    = "codex"
 
 	workdirContainerPath = "/workdir"
 )
@@ -58,6 +59,14 @@ var definitions = []Harness{
 			{RelativePath: ".pi/agent/auth.json", ContainerPath: "/root/.pi/agent/auth.json", ReadOnly: true},
 			{RelativePath: ".pi/agent/keybindings.json", ContainerPath: "/root/.pi/agent/keybindings.json", ReadOnly: true},
 			{RelativePath: ".pi/agent/settings.json", ContainerPath: "/root/.pi/agent/settings.json", ReadOnly: true},
+		},
+	},
+	{
+		Name:       NameCodex,
+		ImageTag:   "sandbox-codex",
+		Dockerfile: "images/codex/Dockerfile",
+		HomeMounts: []HomeMount{
+			{RelativePath: ".codex", ContainerPath: "/root/.codex"},
 		},
 	},
 }

@@ -43,7 +43,7 @@ func TestRootHelp(t *testing.T) {
 		t.Fatalf("expected help command to succeed: %v", err)
 	}
 
-	for _, want := range []string{"Run local Sandbox Image workflows", "Usage:", "cbox [flags]", "--version"} {
+	for _, want := range []string{"Run local Sandbox Image workflows", "Usage:", "cbox [flags]", "codex", "--version"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("expected help output to contain %q, got:\n%s", want, out)
 		}
@@ -62,6 +62,7 @@ func TestBuildInvokesRunnerForSelectedHarnesses(t *testing.T) {
 			want: [][]string{
 				{"build", "-f", "images/opencode/Dockerfile", "-t", "sandbox-opencode", "."},
 				{"build", "-f", "images/pi/Dockerfile", "-t", "sandbox-pi", "."},
+				{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
 			},
 		},
 		{
@@ -70,6 +71,7 @@ func TestBuildInvokesRunnerForSelectedHarnesses(t *testing.T) {
 			want: [][]string{
 				{"build", "-f", "images/opencode/Dockerfile", "-t", "sandbox-opencode", "."},
 				{"build", "-f", "images/pi/Dockerfile", "-t", "sandbox-pi", "."},
+				{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
 			},
 		},
 		{
@@ -87,19 +89,28 @@ func TestBuildInvokesRunnerForSelectedHarnesses(t *testing.T) {
 			},
 		},
 		{
+			name: "codex only",
+			args: []string{"build", "--harness", "codex"},
+			want: [][]string{
+				{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
+			},
+		},
+		{
 			name: "multiple harnesses use documented order",
-			args: []string{"build", "--harness", "pi", "--harness", "opencode"},
+			args: []string{"build", "--harness", "codex", "--harness", "pi", "--harness", "opencode"},
 			want: [][]string{
 				{"build", "-f", "images/opencode/Dockerfile", "-t", "sandbox-opencode", "."},
 				{"build", "-f", "images/pi/Dockerfile", "-t", "sandbox-pi", "."},
+				{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
 			},
 		},
 		{
 			name: "duplicate harnesses are de-duplicated",
-			args: []string{"build", "--harness", "opencode", "--harness", "opencode", "--harness", "pi"},
+			args: []string{"build", "--harness", "opencode", "--harness", "opencode", "--harness", "pi", "--harness", "codex", "--harness", "codex"},
 			want: [][]string{
 				{"build", "-f", "images/opencode/Dockerfile", "-t", "sandbox-opencode", "."},
 				{"build", "-f", "images/pi/Dockerfile", "-t", "sandbox-pi", "."},
+				{"build", "-f", "images/codex/Dockerfile", "-t", "sandbox-codex", "."},
 			},
 		},
 	}
@@ -142,7 +153,7 @@ func TestBuildRejectsInvalidHarness(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected invalid Harness to fail")
 	}
-	for _, want := range []string{"invalid Harness \"unknown\"", "valid Harnesses: opencode, pi"} {
+	for _, want := range []string{"invalid Harness \"unknown\"", "valid Harnesses: opencode, pi, codex"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("expected error to contain %q, got %v", want, err)
 		}
@@ -242,6 +253,29 @@ func TestRunPIInvokesRunnerWithDocumentedArgv(t *testing.T) {
 	}
 }
 
+func TestRunCodexInvokesRunnerWithDocumentedArgv(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "codex")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/repo:/workdir",
+		"-w", "/workdir",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
 func TestOpenCodeShorthandMatchesRunCommand(t *testing.T) {
 	runRunner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{
@@ -294,6 +328,32 @@ func TestPIShorthandMatchesRunCommand(t *testing.T) {
 	}
 }
 
+func TestCodexShorthandMatchesRunCommand(t *testing.T) {
+	runRunner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "codex")
+	if err != nil {
+		t.Fatalf("expected explicit run command to succeed: %v", err)
+	}
+
+	shorthandRunner := &recordingRunner{}
+	_, err = executeRootWithOptions([]Option{
+		WithRunner(shorthandRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "codex")
+	if err != nil {
+		t.Fatalf("expected shorthand command to succeed: %v", err)
+	}
+
+	if !reflect.DeepEqual(shorthandRunner.calls, runRunner.calls) {
+		t.Fatalf("expected shorthand runner calls to match explicit run:\n%q\ngot:\n%q", runRunner.calls, shorthandRunner.calls)
+	}
+}
+
 func TestRunOpenCodeAppendsPassThroughAfterImageName(t *testing.T) {
 	runner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{
@@ -336,6 +396,48 @@ func TestRunPIAppendsPassThroughAfterImageName(t *testing.T) {
 	}
 }
 
+func TestRunCodexAppendsPassThroughAfterImageName(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--", "codex", "--version")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected one runner call, got %q", runner.calls)
+	}
+
+	got := runner.calls[0]
+	wantSuffix := []string{"sandbox-codex", "codex", "--version"}
+	if !reflect.DeepEqual(got[len(got)-len(wantSuffix):], wantSuffix) {
+		t.Fatalf("expected argv suffix %q, got %q", wantSuffix, got)
+	}
+}
+
+func TestCodexShorthandAppendsPassThroughAfterImageName(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "codex", "--", "codex", "--version")
+	if err != nil {
+		t.Fatalf("expected shorthand command to succeed: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected one runner call, got %q", runner.calls)
+	}
+
+	got := runner.calls[0]
+	wantSuffix := []string{"sandbox-codex", "codex", "--version"}
+	if !reflect.DeepEqual(got[len(got)-len(wantSuffix):], wantSuffix) {
+		t.Fatalf("expected argv suffix %q, got %q", wantSuffix, got)
+	}
+}
+
 func TestRunRequiresDashDashBeforeContainerCommand(t *testing.T) {
 	runner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{WithRunner(runner)}, "run", "opencode", "opencode", "debug")
@@ -370,7 +472,7 @@ func TestRunRejectsInvalidHarness(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected invalid Harness to fail")
 	}
-	for _, want := range []string{"invalid Harness \"unknown\"", "valid Harnesses: opencode, pi"} {
+	for _, want := range []string{"invalid Harness \"unknown\"", "valid Harnesses: opencode, pi, codex"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("expected error to contain %q, got %v", want, err)
 		}
@@ -487,6 +589,7 @@ func repoRootWithDockerfiles(t *testing.T) string {
 	root := t.TempDir()
 	writeDockerfile(t, root, "images/opencode/Dockerfile")
 	writeDockerfile(t, root, "images/pi/Dockerfile")
+	writeDockerfile(t, root, "images/codex/Dockerfile")
 
 	return root
 }
