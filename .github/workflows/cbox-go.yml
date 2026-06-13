@@ -1,0 +1,25 @@
+name: cbox Go CLI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: go test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/cbox
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/cbox/go.mod
+          cache-dependency-path: tools/cbox/go.sum
+
+      - name: Test
+        run: go test ./...

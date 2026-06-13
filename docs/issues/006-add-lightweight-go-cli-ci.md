@@ -12,11 +12,11 @@ Add a lightweight CI check for the Go CLI that runs `go test ./...` under `tools
 
 ## Acceptance Criteria
 
-- [ ] CI runs Go tests for the `tools/cbox` module.
-- [ ] CI does not run Docker build commands.
-- [ ] CI does not run interactive Docker run commands.
-- [ ] The check fails when `tools/cbox` tests fail.
-- [ ] The check can be run locally with the same `go test ./...` command from `tools/cbox`.
+- [x] CI runs Go tests for the `tools/cbox` module.
+- [x] CI does not run Docker build commands.
+- [x] CI does not run interactive Docker run commands.
+- [x] The check fails when `tools/cbox` tests fail.
+- [x] The check can be run locally with the same `go test ./...` command from `tools/cbox`.
 
 ## Blocked By
 
