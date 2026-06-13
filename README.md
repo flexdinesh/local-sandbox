@@ -67,6 +67,14 @@ cbox pi -- pi --version
 cbox codex -- codex --version
 ```
 
+Start a fresh Harness container with a shell instead of the default CLI:
+
+```bash
+cbox run opencode -- sh
+cbox run pi -- sh
+cbox run codex -- sh
+```
+
 Print the CLI version:
 
 ```bash

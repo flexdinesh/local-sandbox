@@ -46,6 +46,8 @@ docker run -it --rm \
   sandbox-opencode opencode debug
 ```
 
+Start a fresh OpenCode container with a shell by appending `sh` after the image name.
+
 ## Run PI
 
 ```bash
@@ -74,6 +76,8 @@ docker run -it --rm \
   sandbox-pi pi --version
 ```
 
+Start a fresh PI container with a shell by appending `sh` after the image name.
+
 ## Run Codex
 
 ```bash
@@ -93,3 +97,5 @@ docker run -it --rm \
   -v "$HOME/.codex:/root/.codex" \
   sandbox-codex codex --version
 ```
+
+Start a fresh Codex container with a shell by appending `sh` after the image name.
