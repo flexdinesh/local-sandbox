@@ -11,4 +11,57 @@ Standalone Docker images for running agent CLIs with a host directory mounted at
 
 See [docs/nocli.md](docs/nocli.md) for manual Docker build and run commands.
 
-The future Go CLI should run Docker commands equivalent to the documented manual commands.
+docs/nocli.md remains the source of truth for manual Docker command equivalence.
+
+## Local CLI
+
+Install the development CLI from the local Go module:
+
+```bash
+cd tools/cbox
+go install ./cmd/cbox
+```
+
+Build all local Sandbox Images:
+
+```bash
+cbox build
+cbox build --all
+```
+
+Build selected Harnesses:
+
+```bash
+cbox build --harness opencode
+cbox build --harness pi
+cbox build --harness opencode --harness pi
+```
+
+Run a Harness explicitly:
+
+```bash
+cbox run opencode
+cbox run pi
+```
+
+Run a Harness with shorthand commands:
+
+```bash
+cbox opencode
+cbox pi
+```
+
+Pass a command through to the container by placing it after `--`:
+
+```bash
+cbox run opencode -- opencode debug
+cbox run pi -- pi --version
+cbox opencode -- opencode debug
+cbox pi -- pi --version
+```
+
+Print the CLI version:
+
+```bash
+cbox --version
+```

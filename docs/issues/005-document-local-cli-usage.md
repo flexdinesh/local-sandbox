@@ -14,13 +14,13 @@ The README should explain how to install the CLI from the local module and show 
 
 ## Acceptance Criteria
 
-- [ ] README documents local development install with `cd tools/cbox` and `go install ./cmd/cbox`.
-- [ ] README documents `cbox build`, `cbox build --all`, and `cbox build --harness ...`.
-- [ ] README documents `cbox run opencode`, `cbox run pi`, `cbox opencode`, and `cbox pi`.
-- [ ] README documents pass-through examples using `--`.
-- [ ] README documents `cbox --version`.
-- [ ] README states that `docs/nocli.md` remains the source of truth for manual Docker command equivalence.
-- [ ] `docs/nocli.md` is not changed for CLI usage docs.
+- [x] README documents local development install with `cd tools/cbox` and `go install ./cmd/cbox`.
+- [x] README documents `cbox build`, `cbox build --all`, and `cbox build --harness ...`.
+- [x] README documents `cbox run opencode`, `cbox run pi`, `cbox opencode`, and `cbox pi`.
+- [x] README documents pass-through examples using `--`.
+- [x] README documents `cbox --version`.
+- [x] README states that `docs/nocli.md` remains the source of truth for manual Docker command equivalence.
+- [x] `docs/nocli.md` is not changed for CLI usage docs.
 
 ## Blocked By
 
