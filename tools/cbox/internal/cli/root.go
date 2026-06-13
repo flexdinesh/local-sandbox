@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -13,8 +14,10 @@ type Runner interface {
 }
 
 type config struct {
-	runner   Runner
-	repoRoot string
+	runner     Runner
+	repoRoot   string
+	workingDir func() (string, error)
+	homeDir    func() (string, error)
 }
 
 type Option func(*config)
@@ -33,8 +36,10 @@ func WithRepoRoot(repoRoot string) Option {
 
 func NewRootCommand(options ...Option) *cobra.Command {
 	cfg := config{
-		runner:   dockerRunner{},
-		repoRoot: ".",
+		runner:     dockerRunner{},
+		repoRoot:   ".",
+		workingDir: os.Getwd,
+		homeDir:    os.UserHomeDir,
 	}
 	for _, option := range options {
 		option(&cfg)
@@ -53,6 +58,10 @@ func NewRootCommand(options ...Option) *cobra.Command {
 
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.AddCommand(newBuildCommand(cfg))
+	cmd.AddCommand(newRunCommand(cfg))
+	for _, h := range []string{"opencode", "pi"} {
+		cmd.AddCommand(newShorthandRunCommand(cfg, h))
+	}
 
 	return cmd
 }

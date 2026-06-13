@@ -185,6 +185,249 @@ func TestBuildPreservesDockerExitCode(t *testing.T) {
 	}
 }
 
+func TestRunOpenCodeInvokesRunnerWithDocumentedArgv(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "opencode")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/repo:/workdir",
+		"-w", "/workdir",
+		"-v", "opencode-config:/root/.config/opencode",
+		"-v", "opencode-shared:/root/.local/share/opencode",
+		"-v", "opencode-state:/root/.local/state/opencode",
+		"-v", "/home/test/.config/opencode/opencode.jsonc:/root/.config/opencode/opencode.jsonc:ro",
+		"-v", "/home/test/.config/opencode/tui.json:/root/.config/opencode/tui.json:ro",
+		"-v", "/home/test/.config/opencode/plugins:/root/.config/opencode/plugins:ro",
+		"-v", "/home/test/.config/opencode/prompts:/root/.config/opencode/prompts:ro",
+		"-v", "/home/test/.local/share/opencode/auth.json:/root/.local/share/opencode/auth.json:ro",
+		"sandbox-opencode",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunPIInvokesRunnerWithDocumentedArgv(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "pi")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/repo:/workdir",
+		"-w", "/workdir",
+		"-v", "shared-pi:/root/.pi",
+		"-v", "/home/test/.pi/agent/extensions:/root/.pi/agent/extensions:ro",
+		"-v", "/home/test/.pi/agent/auth.json:/root/.pi/agent/auth.json:ro",
+		"-v", "/home/test/.pi/agent/keybindings.json:/root/.pi/agent/keybindings.json:ro",
+		"-v", "/home/test/.pi/agent/settings.json:/root/.pi/agent/settings.json:ro",
+		"sandbox-pi",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestOpenCodeShorthandMatchesRunCommand(t *testing.T) {
+	runRunner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "opencode")
+	if err != nil {
+		t.Fatalf("expected explicit run command to succeed: %v", err)
+	}
+
+	shorthandRunner := &recordingRunner{}
+	_, err = executeRootWithOptions([]Option{
+		WithRunner(shorthandRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "opencode")
+	if err != nil {
+		t.Fatalf("expected shorthand command to succeed: %v", err)
+	}
+
+	if !reflect.DeepEqual(shorthandRunner.calls, runRunner.calls) {
+		t.Fatalf("expected shorthand runner calls to match explicit run:\n%q\ngot:\n%q", runRunner.calls, shorthandRunner.calls)
+	}
+}
+
+func TestPIShorthandMatchesRunCommand(t *testing.T) {
+	runRunner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "pi")
+	if err != nil {
+		t.Fatalf("expected explicit run command to succeed: %v", err)
+	}
+
+	shorthandRunner := &recordingRunner{}
+	_, err = executeRootWithOptions([]Option{
+		WithRunner(shorthandRunner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "pi")
+	if err != nil {
+		t.Fatalf("expected shorthand command to succeed: %v", err)
+	}
+
+	if !reflect.DeepEqual(shorthandRunner.calls, runRunner.calls) {
+		t.Fatalf("expected shorthand runner calls to match explicit run:\n%q\ngot:\n%q", runRunner.calls, shorthandRunner.calls)
+	}
+}
+
+func TestRunOpenCodeAppendsPassThroughAfterImageName(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "opencode", "--", "opencode", "debug")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected one runner call, got %q", runner.calls)
+	}
+
+	got := runner.calls[0]
+	wantSuffix := []string{"sandbox-opencode", "opencode", "debug"}
+	if !reflect.DeepEqual(got[len(got)-len(wantSuffix):], wantSuffix) {
+		t.Fatalf("expected argv suffix %q, got %q", wantSuffix, got)
+	}
+}
+
+func TestRunPIAppendsPassThroughAfterImageName(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "pi", "--", "pi", "--version")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected one runner call, got %q", runner.calls)
+	}
+
+	got := runner.calls[0]
+	wantSuffix := []string{"sandbox-pi", "pi", "--version"}
+	if !reflect.DeepEqual(got[len(got)-len(wantSuffix):], wantSuffix) {
+		t.Fatalf("expected argv suffix %q, got %q", wantSuffix, got)
+	}
+}
+
+func TestRunRequiresDashDashBeforeContainerCommand(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{WithRunner(runner)}, "run", "opencode", "opencode", "debug")
+	if err == nil {
+		t.Fatal("expected container command without -- to fail")
+	}
+	if !strings.Contains(err.Error(), "container commands must be passed after --") {
+		t.Fatalf("expected dash-dash error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunRejectsUnknownFlagsBeforeDashDash(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{WithRunner(runner)}, "run", "opencode", "--unknown")
+	if err == nil {
+		t.Fatal("expected unknown flag to fail")
+	}
+	if !strings.Contains(err.Error(), "unknown flag: --unknown") {
+		t.Fatalf("expected unknown flag error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunRejectsInvalidHarness(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{WithRunner(runner)}, "run", "unknown")
+	if err == nil {
+		t.Fatal("expected invalid Harness to fail")
+	}
+	for _, want := range []string{"invalid Harness \"unknown\"", "valid Harnesses: opencode, pi"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunFailsBeforeDockerWhenHomeDirCannotBeResolved(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDirError(errors.New("no home")),
+	}, "run", "opencode")
+	if err == nil {
+		t.Fatal("expected home resolution failure")
+	}
+	if !strings.Contains(err.Error(), "failed to resolve user home directory") {
+		t.Fatalf("expected home resolution error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunDoesNotPrevalidateHostBindMountSources(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/missing/workdir"),
+		withHomeDir("/missing/home"),
+	}, "run", "pi")
+	if err != nil {
+		t.Fatalf("expected run command to delegate missing host paths to Docker: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected runner to be invoked once, got %q", runner.calls)
+	}
+}
+
+func TestRunPreservesDockerExitCode(t *testing.T) {
+	runner := &recordingRunner{err: exitCodeError{code: 42}}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/repo"),
+		withHomeDir("/home/test"),
+	}, "run", "opencode")
+	if err == nil {
+		t.Fatal("expected runner error")
+	}
+	if got := ExitCode(err); got != 42 {
+		t.Fatalf("expected exit code 42, got %d", got)
+	}
+}
+
 func TestExitCodeFallsBackToOne(t *testing.T) {
 	if got := ExitCode(errors.New("plain error")); got != 1 {
 		t.Fatalf("expected plain errors to exit 1, got %d", got)
@@ -212,6 +455,30 @@ func (e exitCodeError) Error() string {
 
 func (e exitCodeError) ExitCode() int {
 	return e.code
+}
+
+func withWorkingDir(path string) Option {
+	return func(cfg *config) {
+		cfg.workingDir = func() (string, error) {
+			return path, nil
+		}
+	}
+}
+
+func withHomeDir(path string) Option {
+	return func(cfg *config) {
+		cfg.homeDir = func() (string, error) {
+			return path, nil
+		}
+	}
+}
+
+func withHomeDirError(err error) Option {
+	return func(cfg *config) {
+		cfg.homeDir = func() (string, error) {
+			return "", err
+		}
+	}
 }
 
 func repoRootWithDockerfiles(t *testing.T) string {
