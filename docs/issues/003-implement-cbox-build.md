@@ -14,17 +14,17 @@ Bare `cbox build` defaults to all Harnesses. `--all` and `--harness` are mutuall
 
 ## Acceptance Criteria
 
-- [ ] `cbox build` builds all Harnesses.
-- [ ] `cbox build --all` builds all Harnesses.
-- [ ] `cbox build --harness opencode` builds only `opencode`.
-- [ ] `cbox build --harness pi` builds only `pi`.
-- [ ] `cbox build --harness opencode --harness pi` builds both in documented order.
-- [ ] Duplicate Harness values are de-duplicated.
-- [ ] `--all` combined with `--harness` returns a usage error.
-- [ ] Invalid Harness names return a usage error listing valid Harnesses.
-- [ ] The command fails clearly when expected repo-relative Dockerfiles are missing.
-- [ ] Docker execution failures preserve Docker's exit code.
-- [ ] Tests cover Cobra parsing, selection behavior, validation, and runner invocation order.
+- [x] `cbox build` builds all Harnesses.
+- [x] `cbox build --all` builds all Harnesses.
+- [x] `cbox build --harness opencode` builds only `opencode`.
+- [x] `cbox build --harness pi` builds only `pi`.
+- [x] `cbox build --harness opencode --harness pi` builds both in documented order.
+- [x] Duplicate Harness values are de-duplicated.
+- [x] `--all` combined with `--harness` returns a usage error.
+- [x] Invalid Harness names return a usage error listing valid Harnesses.
+- [x] The command fails clearly when expected repo-relative Dockerfiles are missing.
+- [x] Docker execution failures preserve Docker's exit code.
+- [x] Tests cover Cobra parsing, selection behavior, validation, and runner invocation order.
 
 ## Blocked By
 

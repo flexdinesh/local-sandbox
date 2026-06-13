@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/flexdinesh/cbox/tools/cbox/internal/cli"
@@ -8,6 +9,7 @@ import (
 
 func main() {
 	if err := cli.NewRootCommand().Execute(); err != nil {
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(cli.ExitCode(err))
 	}
 }

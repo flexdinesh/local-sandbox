@@ -14,11 +14,11 @@ This slice should establish the module path, package layout, and test scaffoldin
 
 ## Acceptance Criteria
 
-- [ ] `tools/cbox` exists as a standalone Go module using `github.com/flexdinesh/cbox/tools/cbox`.
-- [ ] The CLI uses Cobra for root command wiring.
-- [ ] `cbox --version` prints `dev`.
-- [ ] Cobra default help works for the root command.
-- [ ] The module has a test setup that can run with `go test ./...`.
+- [x] `tools/cbox` exists as a standalone Go module using `github.com/flexdinesh/cbox/tools/cbox`.
+- [x] The CLI uses Cobra for root command wiring.
+- [x] `cbox --version` prints `dev`.
+- [x] Cobra default help works for the root command.
+- [x] The module has a test setup that can run with `go test ./...`.
 
 ## Blocked By
 
