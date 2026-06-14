@@ -99,3 +99,33 @@ docker run -it --rm \
 ```
 
 Start a fresh Codex container with a shell by appending `sh` after the image name.
+
+## Additional Workspace Mounts
+
+Every run command may include additional Workspace Mounts by adding more Docker
+bind mounts before `-w`. If an additional Workspace Mount contains the caller's
+current directory, use the corresponding path inside the container as the working
+directory and do not also mount `$PWD` at `/workdir`.
+
+For example, when the caller's current directory is `$HOME/workspace/abc`, mount
+the broader workspace tree and work in the matching container path:
+
+```bash
+docker run -it --rm \
+  -v "$HOME/workspace:/root/workspace" \
+  -w /root/workspace/abc \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex
+```
+
+If additional Workspace Mounts do not contain the caller's current directory,
+keep the default `$PWD:/workdir` mount and working directory:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -v "$HOME/workspace:/root/workspace" \
+  -w /workdir \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex
+```

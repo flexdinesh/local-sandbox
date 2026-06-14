@@ -29,6 +29,16 @@ type HomeMount struct {
 	ReadOnly      bool
 }
 
+type Workspace struct {
+	Mounts     []WorkspaceMount
+	WorkingDir string
+}
+
+type WorkspaceMount struct {
+	HostPath      string
+	ContainerPath string
+}
+
 var definitions = []Harness{
 	{
 		Name:       NameOpenCode,
@@ -95,15 +105,26 @@ func (h Harness) BuildArgv() []string {
 }
 
 func (h Harness) RunArgv(workdir, homeDir string, passThrough []string) []string {
+	return h.RunArgvWithWorkspace(Workspace{
+		Mounts: []WorkspaceMount{
+			{HostPath: workdir, ContainerPath: workdirContainerPath},
+		},
+		WorkingDir: workdirContainerPath,
+	}, homeDir, passThrough)
+}
+
+func (h Harness) RunArgvWithWorkspace(workspace Workspace, homeDir string, passThrough []string) []string {
 	argv := []string{
 		"run",
 		"-it",
 		"--rm",
-		"-v",
-		workdir + ":" + workdirContainerPath,
-		"-w",
-		workdirContainerPath,
 	}
+
+	for _, mount := range workspace.Mounts {
+		argv = append(argv, "-v", mount.HostPath+":"+mount.ContainerPath)
+	}
+
+	argv = append(argv, "-w", workspace.WorkingDir)
 
 	for _, volume := range h.Volumes {
 		argv = append(argv, "-v", volume.Name+":"+volume.ContainerPath)
@@ -121,6 +142,17 @@ func (h Harness) RunArgv(workdir, homeDir string, passThrough []string) []string
 	argv = append(argv, passThrough...)
 
 	return argv
+}
+
+func (h Harness) ManagedContainerPaths() []string {
+	paths := make([]string, 0, len(h.Volumes)+len(h.HomeMounts))
+	for _, volume := range h.Volumes {
+		paths = append(paths, volume.ContainerPath)
+	}
+	for _, mount := range h.HomeMounts {
+		paths = append(paths, mount.ContainerPath)
+	}
+	return paths
 }
 
 func clone(h Harness) Harness {
