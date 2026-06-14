@@ -11,11 +11,12 @@ const (
 )
 
 type Harness struct {
-	Name       string
-	ImageTag   string
-	Dockerfile string
-	Volumes    []Volume
-	HomeMounts []HomeMount
+	Name           string
+	ImageTag       string
+	Dockerfile     string
+	DefaultCommand []string
+	Volumes        []Volume
+	HomeMounts     []HomeMount
 }
 
 type Volume struct {
@@ -31,9 +32,10 @@ type HomeMount struct {
 
 var definitions = []Harness{
 	{
-		Name:       NameOpenCode,
-		ImageTag:   "sandbox-opencode",
-		Dockerfile: "images/opencode/Dockerfile",
+		Name:           NameOpenCode,
+		ImageTag:       "sandbox-opencode",
+		Dockerfile:     "images/opencode/Dockerfile",
+		DefaultCommand: []string{"opencode"},
 		Volumes: []Volume{
 			{Name: "opencode-config", ContainerPath: "/root/.config/opencode"},
 			{Name: "opencode-shared", ContainerPath: "/root/.local/share/opencode"},
@@ -48,9 +50,10 @@ var definitions = []Harness{
 		},
 	},
 	{
-		Name:       NamePI,
-		ImageTag:   "sandbox-pi",
-		Dockerfile: "images/pi/Dockerfile",
+		Name:           NamePI,
+		ImageTag:       "sandbox-pi",
+		Dockerfile:     "images/pi/Dockerfile",
+		DefaultCommand: []string{"pi"},
 		Volumes: []Volume{
 			{Name: "shared-pi", ContainerPath: "/root/.pi"},
 		},
@@ -62,9 +65,10 @@ var definitions = []Harness{
 		},
 	},
 	{
-		Name:       NameCodex,
-		ImageTag:   "sandbox-codex",
-		Dockerfile: "images/codex/Dockerfile",
+		Name:           NameCodex,
+		ImageTag:       "sandbox-codex",
+		Dockerfile:     "images/codex/Dockerfile",
+		DefaultCommand: []string{"codex"},
 		HomeMounts: []HomeMount{
 			{RelativePath: ".codex", ContainerPath: "/root/.codex"},
 		},
@@ -95,6 +99,10 @@ func (h Harness) BuildArgv() []string {
 }
 
 func (h Harness) RunArgv(workdir, homeDir string, passThrough []string) []string {
+	return h.RunArgvWithProjectEnvironment(workdir, homeDir, passThrough, "")
+}
+
+func (h Harness) RunArgvWithProjectEnvironment(workdir, homeDir string, passThrough []string, projectEnvironment string) []string {
 	argv := []string{
 		"run",
 		"-it",
@@ -103,6 +111,13 @@ func (h Harness) RunArgv(workdir, homeDir string, passThrough []string) []string
 		workdir + ":" + workdirContainerPath,
 		"-w",
 		workdirContainerPath,
+	}
+
+	if projectEnvironment == "nix" {
+		argv = append(argv,
+			"-v", "cbox-nix:/nix",
+			"-v", "cbox-nix-cache:/root/.cache/nix",
+		)
 	}
 
 	for _, volume := range h.Volumes {
@@ -118,12 +133,22 @@ func (h Harness) RunArgv(workdir, homeDir string, passThrough []string) []string
 	}
 
 	argv = append(argv, h.ImageTag)
-	argv = append(argv, passThrough...)
+	if projectEnvironment == "nix" {
+		command := passThrough
+		if len(command) == 0 {
+			command = h.DefaultCommand
+		}
+		argv = append(argv, "nix", "develop", "--command")
+		argv = append(argv, command...)
+	} else {
+		argv = append(argv, passThrough...)
+	}
 
 	return argv
 }
 
 func clone(h Harness) Harness {
+	h.DefaultCommand = append([]string(nil), h.DefaultCommand...)
 	h.Volumes = append([]Volume(nil), h.Volumes...)
 	h.HomeMounts = append([]HomeMount(nil), h.HomeMounts...)
 	return h

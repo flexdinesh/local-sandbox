@@ -67,6 +67,22 @@ cbox pi -- pi --version
 cbox codex -- codex --version
 ```
 
+Run a Harness inside the Mounted Workspace's Nix Project Environment:
+
+```bash
+cbox run opencode --project-env nix
+cbox run pi --project-env nix
+cbox run codex --project-env nix
+cbox codex --project-env nix
+```
+
+Pass a command through inside the same Nix Project Environment:
+
+```bash
+cbox run codex --project-env nix -- go test ./...
+cbox codex --project-env nix -- go test ./...
+```
+
 Start a fresh Harness container with a shell instead of the default CLI:
 
 ```bash

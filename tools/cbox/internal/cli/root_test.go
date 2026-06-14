@@ -163,6 +163,20 @@ func TestBuildRejectsInvalidHarness(t *testing.T) {
 	}
 }
 
+func TestBuildRejectsProjectEnvironmentFlag(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{WithRunner(runner)}, "build", "--project-env", "nix")
+	if err == nil {
+		t.Fatal("expected build with --project-env to fail")
+	}
+	if !strings.Contains(err.Error(), "unknown flag: --project-env") {
+		t.Fatalf("expected unknown flag error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
 func TestBuildFailsClearlyWhenDockerfileIsMissing(t *testing.T) {
 	runner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{
@@ -276,6 +290,144 @@ func TestRunCodexInvokesRunnerWithDocumentedArgv(t *testing.T) {
 	}
 }
 
+func TestRunCodexWithNixProjectEnvironmentInvokesRunnerWithDocumentedArgv(t *testing.T) {
+	workdir := t.TempDir()
+	writeFile(t, workdir, "flake.nix", "{ }\n")
+
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir(workdir),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--project-env", "nix")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", workdir + ":/workdir",
+		"-w", "/workdir",
+		"-v", "cbox-nix:/nix",
+		"-v", "cbox-nix-cache:/root/.cache/nix",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+		"nix", "develop", "--command", "codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunHarnessesWithNixProjectEnvironmentUseHarnessDefaultCommands(t *testing.T) {
+	tests := []struct {
+		name       string
+		harness    string
+		wantSuffix []string
+	}{
+		{
+			name:       "opencode",
+			harness:    "opencode",
+			wantSuffix: []string{"sandbox-opencode", "nix", "develop", "--command", "opencode"},
+		},
+		{
+			name:       "pi",
+			harness:    "pi",
+			wantSuffix: []string{"sandbox-pi", "nix", "develop", "--command", "pi"},
+		},
+		{
+			name:       "codex",
+			harness:    "codex",
+			wantSuffix: []string{"sandbox-codex", "nix", "develop", "--command", "codex"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workdir := t.TempDir()
+			writeFile(t, workdir, "flake.nix", "{ }\n")
+
+			runner := &recordingRunner{}
+			_, err := executeRootWithOptions([]Option{
+				WithRunner(runner),
+				withWorkingDir(workdir),
+				withHomeDir("/home/test"),
+			}, "run", tt.harness, "--project-env", "nix")
+			if err != nil {
+				t.Fatalf("expected run command to succeed: %v", err)
+			}
+			if len(runner.calls) != 1 {
+				t.Fatalf("expected one runner call, got %q", runner.calls)
+			}
+
+			got := runner.calls[0]
+			if !reflect.DeepEqual(got[len(got)-len(tt.wantSuffix):], tt.wantSuffix) {
+				t.Fatalf("expected argv suffix %q, got %q", tt.wantSuffix, got)
+			}
+		})
+	}
+}
+
+func TestRunCodexWithNixProjectEnvironmentWrapsPassThroughCommand(t *testing.T) {
+	workdir := t.TempDir()
+	writeFile(t, workdir, "flake.nix", "{ }\n")
+
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir(workdir),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--project-env", "nix", "--", "go", "test", "./...")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+	if len(runner.calls) != 1 {
+		t.Fatalf("expected one runner call, got %q", runner.calls)
+	}
+
+	got := runner.calls[0]
+	wantSuffix := []string{"sandbox-codex", "nix", "develop", "--command", "go", "test", "./..."}
+	if !reflect.DeepEqual(got[len(got)-len(wantSuffix):], wantSuffix) {
+		t.Fatalf("expected argv suffix %q, got %q", wantSuffix, got)
+	}
+}
+
+func TestRunWithNixProjectEnvironmentRequiresFlakeNix(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir(t.TempDir()),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--project-env", "nix")
+	if err == nil {
+		t.Fatal("expected missing flake.nix to fail")
+	}
+	if !strings.Contains(err.Error(), "Nix Project Environment requested, but no flake.nix was found in the Mounted Workspace") {
+		t.Fatalf("expected missing flake.nix error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunRejectsUnsupportedProjectEnvironment(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir(t.TempDir()),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--project-env", "mise")
+	if err == nil {
+		t.Fatal("expected unsupported Project Environment to fail")
+	}
+	if !strings.Contains(err.Error(), "unsupported Project Environment \"mise\" (supported: nix)") {
+		t.Fatalf("expected unsupported Project Environment error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
 func TestOpenCodeShorthandMatchesRunCommand(t *testing.T) {
 	runRunner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{
@@ -345,6 +497,35 @@ func TestCodexShorthandMatchesRunCommand(t *testing.T) {
 		withWorkingDir("/repo"),
 		withHomeDir("/home/test"),
 	}, "codex")
+	if err != nil {
+		t.Fatalf("expected shorthand command to succeed: %v", err)
+	}
+
+	if !reflect.DeepEqual(shorthandRunner.calls, runRunner.calls) {
+		t.Fatalf("expected shorthand runner calls to match explicit run:\n%q\ngot:\n%q", runRunner.calls, shorthandRunner.calls)
+	}
+}
+
+func TestCodexShorthandWithNixProjectEnvironmentMatchesRunCommand(t *testing.T) {
+	workdir := t.TempDir()
+	writeFile(t, workdir, "flake.nix", "{ }\n")
+
+	runRunner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runRunner),
+		withWorkingDir(workdir),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--project-env", "nix", "--", "go", "test", "./...")
+	if err != nil {
+		t.Fatalf("expected explicit run command to succeed: %v", err)
+	}
+
+	shorthandRunner := &recordingRunner{}
+	_, err = executeRootWithOptions([]Option{
+		WithRunner(shorthandRunner),
+		withWorkingDir(workdir),
+		withHomeDir("/home/test"),
+	}, "codex", "--project-env", "nix", "--", "go", "test", "./...")
 	if err != nil {
 		t.Fatalf("expected shorthand command to succeed: %v", err)
 	}
@@ -603,5 +784,17 @@ func writeDockerfile(t *testing.T, root, rel string) {
 	}
 	if err := os.WriteFile(path, []byte("FROM scratch\n"), 0o644); err != nil {
 		t.Fatalf("failed to write Dockerfile: %v", err)
+	}
+}
+
+func writeFile(t *testing.T, root, rel, contents string) {
+	t.Helper()
+
+	path := filepath.Join(root, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("failed to create parent directory: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
 	}
 }
