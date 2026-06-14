@@ -13,8 +13,12 @@ A named agent runtime profile backed by a Sandbox Image and Manual Docker Comman
 _Avoid_: Agent CLI, intractor CLI, tool, app
 
 **Mounted Workspace**:
-The host directory mounted into a Sandbox Image at `/workdir`.
+The host directory tree mounted into a Sandbox Image as the primary filesystem context for a Harness run.
 _Avoid_: Project folder, working folder, bind target
+
+**Workspace Mount**:
+A caller-selected host directory tree mounted into a Sandbox Image as part of the filesystem context for a Harness run.
+_Avoid_: Docker mount, volume, bind target
 
 **Manual Docker Commands**:
 The Docker build and run commands documented as the source of truth for Sandbox Image behavior.

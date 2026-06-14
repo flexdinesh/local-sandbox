@@ -6,9 +6,10 @@ Build `cbox`, a small CLI that abstracts Docker for running Harness CLIs inside
 Sandbox Images.
 
 The project is about sandbox-oriented local agent/dev workflows. The core
-workflow is filesystem-first: mount a host directory into a container as the
-Mounted Workspace at `/workdir`, mount only the Harness-specific config/auth
-paths needed for access, and run the Harness CLI in the foreground.
+workflow is filesystem-first: mount explicit host directory trees into a
+container as the Mounted Workspace and optional Workspace Mounts, mount only the
+Harness-specific config/auth paths needed for access, and run the Harness CLI in
+the foreground.
 
 The biggest motivation is to prevent Harness sessions from unintentionally
 modifying the base machine filesystem. A container session can run with higher
@@ -24,6 +25,9 @@ exposed through explicit Docker mounts.
 - The container owns execution.
 - Explicit mounts bridge the host and container where needed for the Harness to
   work.
+- Workspace Mounts are caller-selected host directory trees exposed to a Harness
+  run in addition to, or instead of, the fallback `$PWD:/workdir` Mounted
+  Workspace.
 - Harness config/auth mounts intentionally let the container share the base
   machine's access, credentials, settings, and local state.
 - Filesystem protection comes first; network sandboxing is future work.
@@ -52,6 +56,7 @@ All images build directly from `node:24.16.0-bookworm-slim`.
 ## Project Pieces
 
 - `docs/nocli.md`: source of truth for Manual Docker Commands.
+- `docs/adr/`: accepted architectural decisions.
 - `images/*/Dockerfile`: standalone Sandbox Images for each Harness.
 - `tools/cbox/internal/harness`: canonical Harness definitions and Docker argv
   construction.
@@ -82,6 +87,13 @@ All images build directly from `node:24.16.0-bookworm-slim`.
   repeated selections while preserving documented order.
 - `cbox run <harness>` runs a Harness in the foreground with the caller's current
   directory mounted at `/workdir`.
+- `cbox run <harness> --workspace-mount HOST:CONTAINER` adds explicit Workspace
+  Mounts.
+- When a Workspace Mount contains the caller's current directory, the most
+  specific matching Workspace Mount determines the container working directory,
+  and the fallback `/workdir` mount is not added.
+- When no Workspace Mount contains the caller's current directory, the fallback
+  `$PWD:/workdir` mount and `-w /workdir` behavior remains.
 - `cbox <harness>` is shorthand for `cbox run <harness>`.
 - Container command overrides must be passed after `--`.
 - Docker/container exit codes must be preserved.

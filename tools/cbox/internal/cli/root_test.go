@@ -276,6 +276,296 @@ func TestRunCodexInvokesRunnerWithDocumentedArgv(t *testing.T) {
 	}
 }
 
+func TestRunUsesCoveringWorkspaceMountAsWorkingDirectory(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace/abc"),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--workspace-mount", "~/workspace:/root/workspace")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/root/workspace/abc",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunAcceptsWorkspaceMountBeforeHarnessName(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace/abc"),
+		withHomeDir("/home/test"),
+	}, "run", "--workspace-mount", "~/workspace:/root/workspace", "codex")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/root/workspace/abc",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunKeepsFallbackWorkdirWhenWorkspaceMountDoesNotCoverWorkingDirectory(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/project"),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--workspace-mount", "~/workspace:/root/workspace")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/project:/workdir",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/workdir",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunDoesNotTreatWorkspaceMountHostPathAsStringPrefix(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace-app"),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--workspace-mount", "~/workspace:/root/workspace")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/workspace-app:/workdir",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/workdir",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunUsesMostSpecificWorkspaceMountAsWorkingDirectory(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace/abc"),
+		withHomeDir("/home/test"),
+	}, "run", "codex",
+		"--workspace-mount", "/home/test:/root/home",
+		"--workspace-mount", "/home/test/workspace:/root/workspace",
+	)
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test:/root/home",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/root/workspace/abc",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunResolvesRelativeWorkspaceMountHostPathFromWorkingDirectory(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace/abc"),
+		withHomeDir("/home/test"),
+	}, "run", "codex", "--workspace-mount", "..:/root/workspace")
+	if err != nil {
+		t.Fatalf("expected run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/root/workspace/abc",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestShorthandRunAcceptsWorkspaceMountBeforeCommandOverride(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/workspace/abc"),
+		withHomeDir("/home/test"),
+	}, "codex", "--workspace-mount", "~/workspace:/root/workspace", "--", "codex", "--version")
+	if err != nil {
+		t.Fatalf("expected shorthand run command to succeed: %v", err)
+	}
+
+	want := [][]string{{
+		"run", "-it", "--rm",
+		"-v", "/home/test/workspace:/root/workspace",
+		"-w", "/root/workspace/abc",
+		"-v", "/home/test/.codex:/root/.codex",
+		"sandbox-codex",
+		"codex", "--version",
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("expected runner calls:\n%q\ngot:\n%q", want, runner.calls)
+	}
+}
+
+func TestRunRejectsDuplicateWorkspaceMountContainerPath(t *testing.T) {
+	runner := &recordingRunner{}
+	_, err := executeRootWithOptions([]Option{
+		WithRunner(runner),
+		withWorkingDir("/home/test/project"),
+		withHomeDir("/home/test"),
+	}, "run", "codex",
+		"--workspace-mount", "~/workspace:/root/workspace",
+		"--workspace-mount", "~/other:/root/workspace",
+	)
+	if err == nil {
+		t.Fatal("expected duplicate Workspace Mount container path to fail")
+	}
+	if !strings.Contains(err.Error(), "duplicate Workspace Mount container path") {
+		t.Fatalf("expected duplicate container path error, got %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+	}
+}
+
+func TestRunRejectsMalformedWorkspaceMounts(t *testing.T) {
+	tests := []struct {
+		name string
+		spec string
+		want string
+	}{
+		{name: "missing separator", spec: "~/workspace", want: "HOST_PATH:CONTAINER_PATH"},
+		{name: "empty host", spec: ":/root/workspace", want: "HOST_PATH:CONTAINER_PATH"},
+		{name: "empty container", spec: "~/workspace:", want: "HOST_PATH:CONTAINER_PATH"},
+		{name: "read only suffix", spec: "~/workspace:/root/workspace:ro", want: "HOST_PATH:CONTAINER_PATH"},
+		{name: "relative container", spec: "~/workspace:workspace", want: "container path must be absolute"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runner := &recordingRunner{}
+			_, err := executeRootWithOptions([]Option{
+				WithRunner(runner),
+				withWorkingDir("/home/test/project"),
+				withHomeDir("/home/test"),
+			}, "run", "codex", "--workspace-mount", tt.spec)
+			if err == nil {
+				t.Fatal("expected malformed Workspace Mount to fail")
+			}
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+			if len(runner.calls) != 0 {
+				t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+			}
+		})
+	}
+}
+
+func TestRunRejectsConflictingWorkspaceMounts(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "duplicate host path",
+			args: []string{
+				"--workspace-mount", "~/workspace:/root/workspace",
+				"--workspace-mount", "/home/test/workspace:/mnt/workspace",
+			},
+			want: "duplicate Workspace Mount host path",
+		},
+		{
+			name: "nested container path",
+			args: []string{
+				"--workspace-mount", "~/workspace:/root/workspace",
+				"--workspace-mount", "~/workspace/abc:/root/workspace/abc",
+			},
+			want: "overlaps",
+		},
+		{
+			name: "fallback workdir path",
+			args: []string{
+				"--workspace-mount", "~/workspace:/workdir",
+			},
+			want: "fallback Mounted Workspace",
+		},
+		{
+			name: "nested fallback workdir path",
+			args: []string{
+				"--workspace-mount", "~/workspace:/workdir/project",
+			},
+			want: "fallback Mounted Workspace",
+		},
+		{
+			name: "Harness managed path",
+			args: []string{
+				"--workspace-mount", "~/workspace:/root/.codex/sessions",
+			},
+			want: "Harness-managed path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runner := &recordingRunner{}
+			args := append([]string{"run", "codex"}, tt.args...)
+			_, err := executeRootWithOptions([]Option{
+				WithRunner(runner),
+				withWorkingDir("/home/test/project"),
+				withHomeDir("/home/test"),
+			}, args...)
+			if err == nil {
+				t.Fatal("expected conflicting Workspace Mount to fail")
+			}
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+			if len(runner.calls) != 0 {
+				t.Fatalf("expected runner not to be invoked, got %q", runner.calls)
+			}
+		})
+	}
+}
+
 func TestOpenCodeShorthandMatchesRunCommand(t *testing.T) {
 	runRunner := &recordingRunner{}
 	_, err := executeRootWithOptions([]Option{
