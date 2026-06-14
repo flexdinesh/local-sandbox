@@ -57,8 +57,8 @@ All images build directly from `node:24.16.0-bookworm-slim`.
   construction.
 - `tools/cbox/internal/cli`: Cobra command surface, build/run behavior, and
   Docker runner wiring.
-- `docs/prd/*`: product decisions and historical scope.
-- `docs/issues/*`: implementation slices and acceptance criteria.
+- `.scratch/*/PRD.md`: product decisions and historical scope.
+- `.scratch/*/issues/*`: implementation slices and acceptance criteria.
 - `.github/workflows/cbox-go.yml`: lightweight Go CLI tests only.
 
 ## Rules

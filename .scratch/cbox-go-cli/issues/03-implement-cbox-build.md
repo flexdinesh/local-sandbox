@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/cbox-go-cli.md`
+`.scratch/cbox-go-cli/PRD.md`
 
 ## What to Build
 
@@ -28,4 +28,4 @@ Bare `cbox build` defaults to all Harnesses. `--all` and `--harness` are mutuall
 
 ## Blocked By
 
-- `docs/issues/002-implement-harness-definitions-and-docker-argv.md`
+- `.scratch/cbox-go-cli/issues/02-implement-harness-definitions-and-docker-argv.md`

@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/cbox-go-cli.md`
+`.scratch/cbox-go-cli/PRD.md`
 
 ## What to Build
 
@@ -24,5 +24,5 @@ The README should explain how to install the CLI from the local module and show 
 
 ## Blocked By
 
-- `docs/issues/003-implement-cbox-build.md`
-- `docs/issues/004-implement-explicit-and-shorthand-run-commands.md`
+- `.scratch/cbox-go-cli/issues/03-implement-cbox-build.md`
+- `.scratch/cbox-go-cli/issues/04-implement-explicit-and-shorthand-run-commands.md`

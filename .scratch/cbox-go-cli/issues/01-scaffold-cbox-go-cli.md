@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/cbox-go-cli.md`
+`.scratch/cbox-go-cli/PRD.md`
 
 ## What to Build
 

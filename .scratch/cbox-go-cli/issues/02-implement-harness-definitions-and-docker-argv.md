@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/cbox-go-cli.md`
+`.scratch/cbox-go-cli/PRD.md`
 
 ## What to Build
 
@@ -24,4 +24,4 @@ Expose pure Docker argv construction for build and run commands so tests can ver
 
 ## Blocked By
 
-- `docs/issues/001-scaffold-cbox-go-cli.md`
+- `.scratch/cbox-go-cli/issues/01-scaffold-cbox-go-cli.md`

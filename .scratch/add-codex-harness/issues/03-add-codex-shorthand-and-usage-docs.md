@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/add-codex-harness.md`
+`.scratch/add-codex-harness/PRD.md`
 
 ## What to Build
 
@@ -28,4 +28,4 @@ The README should document Codex image, build, explicit run, shorthand run, pass
 
 ## Blocked By
 
-- `docs/issues/008-add-codex-run-path.md`
+- `.scratch/add-codex-harness/issues/02-add-codex-run-path.md`

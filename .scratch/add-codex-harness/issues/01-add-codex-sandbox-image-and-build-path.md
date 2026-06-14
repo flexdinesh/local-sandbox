@@ -4,7 +4,7 @@ Type: AFK
 
 ## Parent
 
-`docs/prd/add-codex-harness.md`
+`.scratch/add-codex-harness/PRD.md`
 
 ## What to Build
 
