@@ -16,6 +16,10 @@ _Avoid_: Agent CLI, intractor CLI, tool, app
 The host directory mounted into a Sandbox Image at `/workdir`.
 _Avoid_: Project folder, working folder, bind target
 
+**Project Environment**:
+The toolchain and project-level runtime made available to a Harness session for the Mounted Workspace. A Project Environment belongs to the Mounted Workspace, not to a Harness.
+_Avoid_: Harness dependencies, image dependencies, dev environment
+
 **Manual Docker Commands**:
 The Docker build and run commands documented as the source of truth for Sandbox Image behavior.
 _Avoid_: noCLI commands, examples, scripts

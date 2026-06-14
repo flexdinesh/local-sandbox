@@ -48,6 +48,48 @@ docker run -it --rm \
 
 Start a fresh OpenCode container with a shell by appending `sh` after the image name.
 
+Run OpenCode inside the Mounted Workspace's default Nix flake dev shell by
+adding CBox-managed Nix volumes and wrapping the command with
+`nix develop --command`. The Mounted Workspace must contain `flake.nix`;
+committing `flake.lock` is recommended for reproducibility.
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v opencode-config:/root/.config/opencode \
+  -v opencode-shared:/root/.local/share/opencode \
+  -v opencode-state:/root/.local/state/opencode \
+  -v "$HOME/.config/opencode/opencode.jsonc:/root/.config/opencode/opencode.jsonc:ro" \
+  -v "$HOME/.config/opencode/tui.json:/root/.config/opencode/tui.json:ro" \
+  -v "$HOME/.config/opencode/plugins:/root/.config/opencode/plugins:ro" \
+  -v "$HOME/.config/opencode/prompts:/root/.config/opencode/prompts:ro" \
+  -v "$HOME/.local/share/opencode/auth.json:/root/.local/share/opencode/auth.json:ro" \
+  sandbox-opencode nix develop --command opencode
+```
+
+Pass a different command inside the same Nix Project Environment by appending it
+after `--command`:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v opencode-config:/root/.config/opencode \
+  -v opencode-shared:/root/.local/share/opencode \
+  -v opencode-state:/root/.local/state/opencode \
+  -v "$HOME/.config/opencode/opencode.jsonc:/root/.config/opencode/opencode.jsonc:ro" \
+  -v "$HOME/.config/opencode/tui.json:/root/.config/opencode/tui.json:ro" \
+  -v "$HOME/.config/opencode/plugins:/root/.config/opencode/plugins:ro" \
+  -v "$HOME/.config/opencode/prompts:/root/.config/opencode/prompts:ro" \
+  -v "$HOME/.local/share/opencode/auth.json:/root/.local/share/opencode/auth.json:ro" \
+  sandbox-opencode nix develop --command go test ./...
+```
+
 ## Run PI
 
 ```bash
@@ -78,6 +120,42 @@ docker run -it --rm \
 
 Start a fresh PI container with a shell by appending `sh` after the image name.
 
+Run PI inside the Mounted Workspace's default Nix flake dev shell by adding
+CBox-managed Nix volumes and wrapping the command with
+`nix develop --command`. The Mounted Workspace must contain `flake.nix`;
+committing `flake.lock` is recommended for reproducibility.
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v shared-pi:/root/.pi \
+  -v "$HOME/.pi/agent/extensions:/root/.pi/agent/extensions:ro" \
+  -v "$HOME/.pi/agent/auth.json:/root/.pi/agent/auth.json:ro" \
+  -v "$HOME/.pi/agent/keybindings.json:/root/.pi/agent/keybindings.json:ro" \
+  -v "$HOME/.pi/agent/settings.json:/root/.pi/agent/settings.json:ro" \
+  sandbox-pi nix develop --command pi
+```
+
+Pass a different command inside the same Nix Project Environment by appending it
+after `--command`:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v shared-pi:/root/.pi \
+  -v "$HOME/.pi/agent/extensions:/root/.pi/agent/extensions:ro" \
+  -v "$HOME/.pi/agent/auth.json:/root/.pi/agent/auth.json:ro" \
+  -v "$HOME/.pi/agent/keybindings.json:/root/.pi/agent/keybindings.json:ro" \
+  -v "$HOME/.pi/agent/settings.json:/root/.pi/agent/settings.json:ro" \
+  sandbox-pi nix develop --command go test ./...
+```
+
 ## Run Codex
 
 ```bash
@@ -99,3 +177,31 @@ docker run -it --rm \
 ```
 
 Start a fresh Codex container with a shell by appending `sh` after the image name.
+
+Run Codex inside the Mounted Workspace's default Nix flake dev shell by adding
+CBox-managed Nix volumes and wrapping the command with
+`nix develop --command`. The Mounted Workspace must contain `flake.nix`;
+committing `flake.lock` is recommended for reproducibility.
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex nix develop --command codex
+```
+
+Pass a different command inside the same Nix Project Environment by appending it
+after `--command`:
+
+```bash
+docker run -it --rm \
+  -v "$PWD:/workdir" \
+  -w /workdir \
+  -v cbox-nix:/nix \
+  -v cbox-nix-cache:/root/.cache/nix \
+  -v "$HOME/.codex:/root/.codex" \
+  sandbox-codex nix develop --command go test ./...
+```
